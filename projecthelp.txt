@@ -1,0 +1,129 @@
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('admin', 'trainer', 'trainee') NOT NULL DEFAULT 'trainee',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+That's great to hear! Here’s a structured approach to help you get started with the implementation of your Trainee Management System (TMS) using PHP:
+
+### 1. **Planning**
+
+- **Define Requirements:**
+  - List all the features you want to include (user management, course management, attendance tracking, etc.).
+  
+- **Create Wireframes:**
+  - Sketch out the user interface for key pages (dashboard, user profiles, course listings).
+
+### 2. **Setting Up the Environment**
+
+- **Web Server:**
+  - Install a local server environment like **XAMPP**, **WAMP**, or **MAMP** for development.
+
+- **Database:**
+  - Use **MySQL** (included in XAMPP/WAMP/MAMP) to set up your database.
+
+### 3. **Database Design**
+
+- **Create Database Schema:**
+  - Design tables for users, courses, attendance, assessments, etc.
+  
+  Example Tables:
+  - **Users**: `id`, `username`, `password`, `role`, `created_at`
+  - **Courses**: `id`, `title`, `description`, `created_by`, `created_at`
+  - **Attendance**: `id`, `user_id`, `course_id`, `date`, `status`
+  - **Assessments**: `id`, `course_id`, `score`, `date_taken`
+
+### 4. **Framework Selection (Optional)**
+
+- If you prefer a structured approach, consider using a PHP framework like **Laravel** or **CodeIgniter** to speed up development and make code management easier.
+
+### 5. **Development Steps**
+
+#### a. **User Management**
+
+- **Registration/Login:**
+  - Implement user registration and authentication (hash passwords using PHP's `password_hash()`).
+  
+- **Role Management:**
+  - Create different roles (admin, trainer, trainee) to manage permissions.
+
+#### b. **Course Management**
+
+- **CRUD Operations:**
+  - Develop functions to create, read, update, and delete courses.
+  
+- **Course Listings:**
+  - Create a page to display all available courses.
+
+#### c. **Attendance Tracking**
+
+- **Check-In/Check-Out:**
+  - Implement features for users to mark attendance for each training session.
+
+#### d. **Assessment Module**
+
+- **Quizzes/Exams:**
+  - Create a section for assessments with scoring functionality.
+  
+- **Feedback:**
+  - Allow trainers to provide feedback on assessments.
+
+#### e. **Reporting and Analytics**
+
+- **Dashboard:**
+  - Build an admin dashboard to visualize trainee performance and attendance statistics.
+
+### 6. **Frontend Development**
+
+- **HTML/CSS/JavaScript:**
+  - Design the frontend using HTML and CSS for layout and styling.
+  - Use JavaScript for dynamic elements (e.g., form validation).
+
+### 7. **Testing**
+
+- **Unit Testing:**
+  - Test individual components for functionality.
+
+- **Integration Testing:**
+  - Ensure that different parts of the system work together.
+
+- **User Acceptance Testing:**
+  - Gather feedback from potential users to improve usability.
+
+### 8. **Deployment**
+
+- **Choose a Hosting Provider:**
+  - Select a web hosting service that supports PHP and MySQL.
+
+- **Upload Files:**
+  - Deploy your application files to the server and set up the database.
+
+### 9. **Documentation**
+
+- **Create Documentation:**
+  - Write user guides for trainers and administrators.
+  - Document the code for future reference.
+
+### 10. **Maintenance and Updates**
+
+- **Regular Updates:**
+  - Plan for periodic updates to add features and fix bugs.
+  
+- **User Support:**
+  - Provide support for users to address any issues they may encounter.
+
+### Resources
+
+- **PHP Documentation:** [PHP.net](https://www.php.net/docs.php)
+- **MySQL Documentation:** [MySQL.com](https://dev.mysql.com/doc/)
+- **Framework Documentation:** Check documentation for Laravel or CodeIgniter if you choose to use one.
+
+If you have specific questions or need help with a particular aspect of the implementation, feel free to ask! Good luck with your project!
+
+
+
+
+modify the code so that we can increase the size of the menu icon
