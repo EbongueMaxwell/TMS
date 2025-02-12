@@ -25,7 +25,7 @@ $username = $_SESSION['username'] ?? 'Guest'; // Fetching username from session 
             align-items: center;
             padding: 0 15px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            width: 100%;
+          /* width: 100%;*/
             position: relative;
         }
 
@@ -79,7 +79,7 @@ $username = $_SESSION['username'] ?? 'Guest'; // Fetching username from session 
             height: 100%;
             width: 200px;
             position: fixed;
-            left: -200px; /* Initially hidden */
+            left: -300px; /* Initially hidden */
             background-color: #f9f9f9;
             transition: left 0.3s;
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
@@ -121,7 +121,7 @@ $username = $_SESSION['username'] ?? 'Guest'; // Fetching username from session 
             const sidebar = document.getElementById('sidebar');
             const body = document.body;
             if (sidebar.style.left === '0px') {
-                sidebar.style.left = '-200px'; // Hide sidebar
+                sidebar.style.left = '-300px'; // Hide sidebar
                 body.classList.remove('show-sidebar');
             } else {
                 sidebar.style.left = '0px'; // Show sidebar

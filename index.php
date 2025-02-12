@@ -24,27 +24,37 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Hash the password
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-        // Prepare the SQL statement
-        $stmt = $conn->prepare("INSERT INTO users (username, password, role, qualifications, expertise) VALUES (?, ?, ?, ?, ?)");
-        if (!$stmt) {
-            $_SESSION['error'] = "Error preparing statement: " . $conn->error;
-        } else {
-            // Bind parameters based on role
-            if ($role === 'trainer') {
-                $stmt->bind_param("sssss", $username, $hashed_password, $role, $qualifications, $expertise);
-            } else {
-                $stmt->bind_param("ssss", $username, $hashed_password, $role, null); // No qualifications or expertise for non-trainers
-            }
+        // Check if the username already exists in the database
+        $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-            // Execute the statement
-            if ($stmt->execute()) {
-                $_SESSION['success'] = "Registration successful!";
-                header("Location: login.php"); // Redirect after successful registration
-                exit();
+        if ($result->num_rows > 0) {
+            $_SESSION['error'] = "Username already taken. Please choose another.";
+        } else {
+            // Prepare the SQL statement
+            $stmt = $conn->prepare("INSERT INTO users (username, password, role, qualifications, expertise) VALUES (?, ?, ?, ?, ?)");
+            if (!$stmt) {
+                $_SESSION['error'] = "Error preparing statement: " . $conn->error;
             } else {
-                $_SESSION['error'] = "Error: " . $stmt->error;
+                // Bind parameters based on role
+                if ($role === 'trainer') {
+                    $stmt->bind_param("sssss", $username, $hashed_password, $role, $qualifications, $expertise);
+                } else {
+                    $stmt->bind_param("ssss", $username, $hashed_password, $role, null); // No qualifications or expertise for non-trainers
+                }
+
+                // Execute the statement
+                if ($stmt->execute()) {
+                    $_SESSION['success'] = "Registration successful!";
+                    header("Location: login.php"); // Redirect after successful registration
+                    exit();
+                } else {
+                    $_SESSION['error'] = "Error: " . $stmt->error;
+                }
+                $stmt->close();
             }
-            $stmt->close();
         }
     }
 }
@@ -60,6 +70,7 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registration Form</title>
     <style>
+        /* Same CSS styles as before */
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
@@ -150,7 +161,7 @@ $conn->close();
             <input type="password" name="password" placeholder="Password" required>
 
             <label for="role">Choose Your Status:</label>
-            <select name="role" required>
+            <select name="role" id="role" required>
                 <option value="trainee">Trainee</option>
                 <option value="trainer">Trainer</option>
                 <option value="admin">Admin</option>
@@ -181,4 +192,4 @@ $conn->close();
         });
     </script>
 </body>
-</html>
+</html> 

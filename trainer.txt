@@ -29,3 +29,209 @@ Help and Support: Access to technical support for any issues that arise while us
 Training on System Use: Resources or training sessions on how to effectively use the course management system.
 Summary
 From a trainer's perspective, a course management system should facilitate their teaching process, enhance interaction with students, and provide tools for assessment and analytics. By focusing on these aspects, the system can empower trainers to deliver high-quality education and foster a productive learning environment.
+
+
+
+ <style>
+        /* Add your styles here */
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .header {
+            height: 55px;
+            background-color: #007bff;
+            color: white;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .header h2 {
+            margin: 0 15px;
+        }
+
+        .search-bar {
+            background-color: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 22px;
+            width: 400px;
+            margin-left: auto;
+            font-size: 16px;
+        }
+
+        .search-icon, .user-icon {
+            cursor: pointer;
+            font-size: 36px;
+            margin-left: 20px;
+            line-height: 55px;
+        }
+
+        .sidebar {
+            height: 100%;
+            width: 200px;
+            position: fixed;
+            left: -300px; /* Initially hidden */
+            background-color: #343a40; /* Dark background */
+            color: white; /* White text */
+            transition: left 0.3s;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            padding: 15px;
+        }
+
+        .sidebar h2 {
+            color: #ffffff; /* Title color */
+            margin: 0 0 20px 0; /* Spacing below title */
+            font-size: 24px; /* Title size */
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 10px 15px;
+            color: #ffffff; /* White text */
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 5px 0;
+            transition: background-color 0.3s, color 0.3s; /* Transition for hover effect */
+        }
+
+        .sidebar a:hover {
+            background-color: #495057; /* Darker background on hover */
+            color: #ffffff; /* Keep text white on hover */
+        }
+
+        .content {
+            padding: 20px;
+            margin-left: 220px; /* Adjusted for sidebar width */
+        }
+
+        .course-container {
+            display: flex; /* Use flexbox for horizontal alignment */
+            flex-wrap: wrap; /* Allow wrapping to the next line if needed */
+            justify-content: space-between; /* Space out the cards */
+        }
+
+        .course-card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            margin: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            height: 200px; /* Decreased height for a smaller card */
+            width: calc(30% - 20px); /* Set width to 30% minus margin for three cards in a row */
+            transition: transform 0.2s; /* Transition for hover effect */
+        }
+
+        .course-card:hover {
+            transform: scale(1.05); /* Scale up on hover */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Enhance shadow on hover */
+        }
+
+        .course-image {
+            width: 100%; /* Full width */
+            height: 100px; /* Fixed height for the image */
+            object-fit: cover; /* Cover the area while maintaining aspect ratio */
+            border-radius: 8px 8px 0 0; /* Rounded corners only at the top */
+        }
+
+        .course-title {
+            font-size: 14px; /* Adjusted size */
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .course-description {
+            font-size: 12px; /* Adjusted size */
+            text-align: center;
+            margin: 5px 0;
+            flex-grow: 1; /* Allow description to take available space */
+        }
+
+        .course-duration {
+            font-size: 12px; /* Adjusted size */
+            margin: 5px 0;
+            color: #666; /* Lighter color */
+        }
+
+        .submit-button {
+            background-color: #007bff; /* Primary button color */
+            color: white; /* Button text color */
+            border: none; /* No border */
+            border-radius: 5px; /* Rounded corners */
+            padding: 10px 20px; /* Padding for the button */
+            cursor: pointer; /* Pointer cursor */
+            margin-top: 20px; /* Spacing above the button */
+            font-size: 16px; /* Font size for the button */
+            transition: background-color 0.3s, transform 0.3s; /* Transition for hover effect */
+        }
+
+        .submit-button:hover {
+            background-color: #0056b3; /* Darker shade on hover */
+            transform: scale(1.05); /* Slight scale effect on hover */
+        }
+
+        /* Objectives Form Styles */
+        #objectivesForm {
+            background-color: #f8f9fa;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        #objectivesForm h2 {
+            margin-top: 0;
+            color: #007bff;
+        }
+
+        #objectivesForm label {
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+        }
+
+        #objectivesForm textarea,
+        #objectivesForm input[type="file"] {
+            width: 100%;
+            padding: 1px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        #objectivesForm button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        #objectivesForm button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+
+        #objectivesForm .cancel-button {
+            background-color: #dc3545;
+            margin-top: 10px;
+        }
+
+        #objectivesForm .cancel-button:hover {
+            background-color: #c82333;
+        }
+    </style>
