@@ -10,17 +10,65 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'trainer') {
 
 $username = $_SESSION['username'] ?? null;
 
-// Fetch courses and their corresponding objectives
-$stmt = $conn->prepare("
-    SELECT c.id, c.title, c.description, co.objectives, co.content_objectives, co.documents 
-    FROM courses c
-    LEFT JOIN course_objectives co ON c.id = co.course_id
-    JOIN teacher_courses tc ON c.id = tc.course_id
-    WHERE tc.teacher_username = ?
-");
-$stmt->bind_param("s", $username);
-$stmt->execute();
-$result = $stmt->get_result(); // Get result set
+// Check if course_id is set in the URL
+if (isset($_GET['course_id'])) {
+    $courseId = $_GET['course_id'];
+
+    // Fetch the specific course and its corresponding objectives
+    $stmt = $conn->prepare("
+        SELECT c.id, c.title, c.description, co.objectives, co.content_objectives, co.documents 
+        FROM courses c
+        LEFT JOIN course_objectives co ON c.id = co.course_id
+        WHERE c.id = ? AND EXISTS (
+            SELECT 1 FROM teacher_courses tc WHERE tc.course_id = c.id AND tc.teacher_username = ?
+        )
+    ");
+    $stmt->bind_param("is", $courseId, $username);
+    $stmt->execute();
+    $result = $stmt->get_result(); // Get result set
+
+    // Check if the course was found
+    if ($result->num_rows > 0) {
+        $course = $result->fetch_assoc(); // Fetch course data
+    } else {
+        // Redirect to trainer dashboard if no course is found
+        header("Location: trainerdash.php");
+        exit();
+    }
+
+    // If course is found, handle form submission for objectives
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['course_id'])) {
+        $courseId = $_POST['course_id'];
+        $objectives = $_POST['objectives'];
+        $contentObjectives = $_POST['content_objectives'];
+
+        // Handle file upload
+        $documents = [];
+        if (!empty($_FILES['documents']['name'][0])) {
+            $uploadsDir = 'uploads/';
+            foreach ($_FILES['documents']['name'] as $key => $name) {
+                $tmpName = $_FILES['documents']['tmp_name'][$key];
+                $filePath = $uploadsDir . basename($name);
+                if (move_uploaded_file($tmpName, $filePath)) {
+                    $documents[] = $filePath; // Store the file path
+                }
+            }
+        }
+
+        // Insert into course_objectives table
+        $stmtInsert = $conn->prepare("INSERT INTO course_objectives (course_id, objectives, content_objectives, documents) VALUES (?, ?, ?, ?)");
+        $stmtInsert->bind_param("isss", $courseId, $objectives, $contentObjectives, json_encode($documents));
+        $stmtInsert->execute();
+
+        // Redirect after submission
+        header("Location: mycourse.php?course_id=" . $courseId);
+        exit();
+    }
+} else {
+    // Redirect to trainer dashboard if no course_id is provided
+    header("Location: trainerdash.php");
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -32,7 +80,7 @@ $result = $stmt->get_result(); // Get result set
     <link rel="stylesheet" href="fontawesome-free-6.4.0-web/css/all.min.css">
     <link rel="stylesheet" href="styles.css"> <!-- Link to your main CSS file -->
     <style>
-        /* Basic styles for mycourses page */
+        /* Basic styles for my courses page */
         html, body {
             height: 100%;
             margin: 0;
@@ -123,9 +171,13 @@ $result = $stmt->get_result(); // Get result set
             font-weight: bold;
         }
 
-        .course-description, .objectives {
+        .course-description {
             font-size: 14px;
             margin: 5px 0;
+        }
+
+        .objectives {
+            margin: 10px 0;
         }
 
         .documents {
@@ -139,6 +191,53 @@ $result = $stmt->get_result(); // Get result set
 
         .document-link:hover {
             text-decoration: underline;
+        }
+
+        /* Objectives Form Styles */
+        #objectivesForm {
+            background-color: #f8f9fa;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        #objectivesForm h2 {
+            margin-top: 0;
+            color: #007bff;
+        }
+
+        #objectivesForm label {
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+        }
+
+        #objectivesForm textarea,
+        #objectivesForm input[type="file"] {
+            width: 100%;
+            padding: 1px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        #objectivesForm button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        #objectivesForm button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
         }
     </style>
     <script>
@@ -181,10 +280,9 @@ $result = $stmt->get_result(); // Get result set
     </div>
 
     <div class="content">
-        <h1>My Courses</h1>
+        <h1>My Course</h1>
 
-        <?php if ($result->num_rows > 0): ?>
-            <?php while ($course = $result->fetch_assoc()): ?>
+        <?php if (isset($course)): ?>
             <div class="course-card">
                 <div class="course-title"><?php echo htmlspecialchars($course['title']); ?></div>
                 <div class="course-description"><?php echo htmlspecialchars($course['description']); ?></div>
@@ -214,9 +312,26 @@ $result = $stmt->get_result(); // Get result set
                     <?php endif; ?>
                 </div>
             </div>
-            <?php endwhile; ?>
+
+            <!-- Objectives Form -->
+            <div id="objectivesForm">
+                <h2>Add Course Objectives</h2>
+                <form method="POST" action="mycourse.php" enctype="multipart/form-data">
+                    <input type="hidden" name="course_id" value="<?php echo htmlspecialchars($course['id']); ?>">
+                    <label for="course-objectives">Objectives:</label>
+                    <textarea id="course-objectives" name="objectives" rows="4" required></textarea>
+                    
+                    <label for="content-objectives">Content Objectives:</label>
+                    <textarea id="content-objectives" name="content_objectives" rows="4" required></textarea>
+                    
+                    <label for="documents">Upload Documents:</label>
+                    <input type="file" id="documents" name="documents[]" multiple>
+                    
+                    <button type="submit">Submit Objectives</button>
+                </form>
+            </div>
         <?php else: ?>
-            <p>No courses found.</p>
+            <p>No course found.</p>
         <?php endif; ?>
 
         <?php
