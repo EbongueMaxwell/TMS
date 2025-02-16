@@ -32,7 +32,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $_SESSION['role'] = $user['role'];
 
                     // Redirect based on user role
-                    header("Location: " . ($_SESSION['role'] === 'admin' ? "admindash.php" : "trainerdash.php"));
+                    if ($_SESSION['role'] === 'admin') {
+                        header("Location: admindash.php");
+                    } elseif ($_SESSION['role'] === 'trainer') {
+                        header("Location: trainerdash.php");
+                    } elseif ($_SESSION['role'] === 'trainee') {
+                        header("Location: trainee_dash.php");
+                    } else {
+                        // Optional: Handle unexpected roles
+                        $_SESSION['error'] = "Unexpected user role.";
+                    }
                     exit();
                 } else {
                     $_SESSION['error'] = "Invalid password.";

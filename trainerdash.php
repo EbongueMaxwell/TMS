@@ -8,30 +8,52 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'trainer') {
     exit();
 }
 
-$username = $_SESSION['username'] ?? '';
+// Fetch username from the users table
+$username = '';
+if (isset($_SESSION['user_id'])) {
+    $userId = $_SESSION['user_id']; // Assuming user ID is stored in the session
+    $stmtUser = $conn->prepare("SELECT username FROM users WHERE id = ?");
+    $stmtUser->bind_param("i", $userId);
+    $stmtUser->execute();
+    $resultUser = $stmtUser->get_result();
+    if ($resultUser->num_rows > 0) {
+        $user = $resultUser->fetch_assoc();
+        $username = $user['username'];
+    }
+    $stmtUser->close();
+}
 
-// Fetch all courses
+// Fetch all available courses
 $stmt = $conn->prepare("SELECT * FROM courses");
 $stmt->execute();
 $courses = $stmt->get_result();
 
-// Handle form submission for inserting course
+// Handle course selection
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['course_id'])) {
     $courseId = $_POST['course_id'];
 
-    // Insert into teacher_courses table
-    $stmtInsert = $conn->prepare("INSERT INTO teacher_courses (course_id, teacher_username) VALUES (?, ?)");
-    $stmtInsert->bind_param("is", $courseId, $username);
-    $stmtInsert->execute();
+    // Check if the trainer already teaches this course
+    $stmtCheck = $conn->prepare("SELECT * FROM teacher_courses WHERE course_id = ? AND teacher_username = ?");
+    $stmtCheck->bind_param("is", $courseId, $username);
+    $stmtCheck->execute();
+    $resultCheck = $stmtCheck->get_result();
 
-    if ($stmtInsert->affected_rows > 0) {
-        echo "<script>window.location.href='mycourse.php?course_id=" . $courseId . "';</script>";
-        exit();
+    if ($resultCheck->num_rows === 0) {
+        // Assign course to trainer
+        $stmtInsert = $conn->prepare("INSERT INTO teacher_courses (course_id, teacher_username) VALUES (?, ?)");
+        $stmtInsert->bind_param("is", $courseId, $username);
+        if ($stmtInsert->execute()) {
+            header("Location: mycourse.php?course_id=" . $courseId);
+            exit();
+        } else {
+            $error = "Error assigning course.";
+        }
+        $stmtInsert->close();
     } else {
-        echo "<script>alert('Error selecting course.');</script>";
+        $error = "You are already assigned to this course.";
     }
 
-    $stmtInsert->close();
+    $stmtCheck->close();
 }
 ?>
 
@@ -42,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['course_id'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trainer Dashboard</title>
     <link rel="stylesheet" href="fontawesome-free-6.4.0-web/css/all.min.css">
-    <link rel="stylesheet" href="styles.css"> <!-- Link to your main CSS file -->
+    <link rel="stylesheet" href="styles.css"> <!-- Link to your CSS file -->
     <style>
         /* General Styling */
         html, body {
@@ -65,13 +87,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['course_id'])) {
             margin: 0 15px;
         }
 
+        .welcome-message {
+            margin-left: auto;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
         .search-bar {
             background-color: white;
             border: 1px solid #ccc;
             padding: 10px;
             border-radius: 22px;
             width: 400px;
-            margin-left: auto;
+            margin-left: 20px;
             font-size: 16px;
         }
 
@@ -80,6 +108,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['course_id'])) {
             font-size: 36px;
             margin-left: 20px;
             line-height: 55px;
+            position: relative; /* For tooltip positioning */
+        }
+
+        .tooltip {
+            display: none;
+            position: absolute;
+            top: 40px; /* Position below the icon */
+            left: -90px; /* Align to the left */
+            background-color: #333;
+            color: #fff;
+            padding: 5px;
+            border-radius: 10px;
+            z-index: 1000;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .user-icon:hover .tooltip {
+            display: block; /* Show tooltip on hover */
         }
 
         .sidebar {
@@ -201,11 +248,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['course_id'])) {
             <i class="fas fa-bars"></i>
         </span>
         <h2>Calea Portal</h2>
+        <div class="welcome-message">Welcome, <?php echo htmlspecialchars($username); ?>!</div>
         <input type="text" id="search-bar" class="search-bar" placeholder="Search...">
         <span class="search-icon"><i class="fas fa-search"></i></span>
         <span class="user-icon">
             <i class="fas fa-user"></i>
-            <div class="username-tooltip"><?php echo htmlspecialchars($username); ?></div>
+            <div class="tooltip"><?php echo htmlspecialchars($username); ?></div>
         </span>
     </div>
 

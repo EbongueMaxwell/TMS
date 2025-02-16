@@ -4,6 +4,10 @@ include 'dbconn.php';
 
 session_start(); // Start session for storing messages
 
+// Error reporting
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Validate and sanitize input
@@ -12,6 +16,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $role = $_POST['role'];
     $qualifications = isset($_POST['qualifications']) ? trim($_POST['qualifications']) : null;
     $expertise = isset($_POST['expertise']) ? trim($_POST['expertise']) : null;
+
+    // Debugging: Output POST data
+    var_dump($_POST);
 
     // Validate username
     if (empty($username) || !preg_match('/^[a-zA-Z0-9_]{3,20}$/', $username)) {
@@ -48,10 +55,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 // Execute the statement
                 if ($stmt->execute()) {
                     $_SESSION['success'] = "Registration successful!";
-                    header("Location: login.php"); // Redirect after successful registration
+                    session_regenerate_id(true); // Regenerate session ID
+                    header("Location: " . ($role === 'trainee' ? "trainee_dash.php" : "login.php"));
                     exit();
                 } else {
-                    $_SESSION['error'] = "Error: " . $stmt->error;
+                    $_SESSION['error'] = "Error executing statement: " . $stmt->error;
                 }
                 $stmt->close();
             }
@@ -70,7 +78,6 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registration Form</title>
     <style>
-        /* Same CSS styles as before */
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
@@ -85,56 +92,22 @@ $conn->close();
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        h1 {
-            text-align: center;
-            color: #333;
-        }
-        form {
-            display: flex;
-            flex-direction: column;
-        }
-        label {
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
+        h1 { text-align: center; color: #333; }
+        form { display: flex; flex-direction: column; }
+        label { margin-bottom: 8px; font-weight: bold; }
         input[type="text"], input[type="password"], select {
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
+            padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px;
         }
         button {
-            padding: 10px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
+            padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;
         }
-        button:hover {
-            background-color: #218838;
-        }
-        a {
-            color: #007bff;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .error {
-            color: red;
-            margin-bottom: 15px;
-        }
-        .success {
-            color: green;
-            margin-bottom: 15px;
-        }
+        button:hover { background-color: #218838; }
+        a { color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .error { color: red; margin-bottom: 15px; }
+        .success { color: green; margin-bottom: 15px; }
         @media (max-width: 500px) {
-            .container {
-                width: 90%; /* Make container responsive */
-            }
+            .container { width: 90%; }
         }
     </style>
 </head>
@@ -142,14 +115,13 @@ $conn->close();
     <div class="container">
         <h1>WELCOME TO CALEA</h1>
         <?php
-        // Display error or success messages
         if (isset($_SESSION['error'])) {
             echo "<div class='error'>{$_SESSION['error']}</div>";
-            unset($_SESSION['error']); // Clear error after displaying
+            unset($_SESSION['error']);
         }
         if (isset($_SESSION['success'])) {
             echo "<div class='success'>{$_SESSION['success']}</div>";
-            unset($_SESSION['success']); // Clear success after displaying
+            unset($_SESSION['success']);
         }
         ?>
         <form method="POST">
@@ -181,15 +153,10 @@ $conn->close();
     </div>
 
     <script>
-        // Show/Hide trainer-specific fields based on role selection
         document.getElementById('role').addEventListener('change', function() {
             const trainerFields = document.getElementById('trainer-fields');
-            if (this.value === 'trainer') {
-                trainerFields.style.display = 'block';
-            } else {
-                trainerFields.style.display = 'none';
-            }
+            trainerFields.style.display = this.value === 'trainer' ? 'block' : 'none';
         });
     </script>
 </body>
-</html> 
+</html>

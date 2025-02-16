@@ -23,7 +23,7 @@ if (isset($_SESSION['user_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Trainee Dashboard</title>
     <link rel="stylesheet" href="fontawesome-free-6.4.0-web/css/all.min.css">
     <style>
         html, body {
@@ -80,15 +80,14 @@ if (isset($_SESSION['user_id'])) {
         .username-tooltip {
             display: none;
             position: absolute;
-            top: 40px; /* Position below the icon */
-            left: -90px; /* Align to the left */
-            background-color: #333;
-            color: #fff;
+            right: 0;
+            top: 100%; /* Position below the icon */
+            background-color: white;
+            border: 1px solid #ccc;
             padding: 5px;
-            border-radius: 10px;
-            z-index: 1000;
-            font-size: 14px;
-            white-space: nowrap;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 10;
         }
 
         .user-icon:hover .username-tooltip {
@@ -177,15 +176,15 @@ if (isset($_SESSION['user_id'])) {
     </div>
 
     <div id="sidebar" class="sidebar">
-        <a href="manage-courses.php">Manage Courses</a>
+        <a href="my-courses.php">My Courses</a>
         <a href="attendance.php">Track Attendance</a>
         <a href="reports.php">View Reports</a>
         <a href="logout.php">Logout</a>
     </div>
 
     <div class="content">
-        <h1>Admin Dashboard</h1>
-        <p>Welcome to the admin dashboard. Use the menu to navigate.</p>
+        <h1>Trainee Dashboard</h1>
+        <p>Welcome to the trainee dashboard. Use the menu to navigate.</p>
     </div>
 
 </body>

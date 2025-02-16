@@ -1,6 +1,6 @@
 <?php
 session_start();
-include 'dbconn.php'; // Your database connection code
+include 'dbconn.php';
 
 // Redirect if not logged in as a trainer
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'trainer') {
@@ -8,66 +8,80 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'trainer') {
     exit();
 }
 
-$username = $_SESSION['username'] ?? null;
+$username = $_SESSION['username'] ?? '';
 
-// Check if course_id is set in the URL
-if (isset($_GET['course_id'])) {
-    $courseId = $_GET['course_id'];
+// Fetch courses assigned to this trainer
+$stmt = $conn->prepare("
+    SELECT c.id, c.title, c.description, c.duration, c.image
+    FROM courses c
+    JOIN teacher_courses tc ON c.id = tc.course_id
+    WHERE tc.teacher_username = ?
+");
+$stmt->bind_param("s", $username);
+$stmt->execute();
+$courses = $stmt->get_result();
+$stmt->close(); // Close after fetching data
 
-    // Fetch the specific course and its corresponding objectives
-    $stmt = $conn->prepare("
-        SELECT c.id, c.title, c.description, co.objectives, co.content_objectives, co.documents 
-        FROM courses c
-        LEFT JOIN course_objectives co ON c.id = co.course_id
-        WHERE c.id = ? AND EXISTS (
-            SELECT 1 FROM teacher_courses tc WHERE tc.course_id = c.id AND tc.teacher_username = ?
-        )
-    ");
-    $stmt->bind_param("is", $courseId, $username);
-    $stmt->execute();
-    $result = $stmt->get_result(); // Get result set
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['course_id'])) {
+    $courseId = $_POST['course_id'];
+    $courseObjectives = $_POST['course_objectives'];
+    $contentObjectives = $_POST['content_objectives'];
+    $fileDestination = null;
 
-    // Check if the course was found
-    if ($result->num_rows > 0) {
-        $course = $result->fetch_assoc(); // Fetch course data
-    } else {
-        // Redirect to trainer dashboard if no course is found
-        header("Location: trainerdash.php");
-        exit();
+    // Handle file upload if provided
+    if (isset($_FILES['course_file']) && $_FILES['course_file']['error'] === UPLOAD_ERR_OK) {
+        $fileName = $_FILES['course_file']['name'];
+        $fileTmpName = $_FILES['course_file']['tmp_name'];
+        $fileExt = pathinfo($fileName, PATHINFO_EXTENSION);
+        $fileNewName = uniqid('', true) . '.' . $fileExt;
+        $fileDestination = 'uploads/' . $fileNewName;
+        move_uploaded_file($fileTmpName, $fileDestination);
     }
 
-    // If course is found, handle form submission for objectives
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['course_id'])) {
-        $courseId = $_POST['course_id'];
-        $objectives = $_POST['objectives'];
-        $contentObjectives = $_POST['content_objectives'];
+    // Check if course objectives already exist
+    $checkStmt = $conn->prepare("SELECT * FROM course_objectives WHERE course_id = ?");
+    $checkStmt->bind_param("i", $courseId);
+    $checkStmt->execute();
+    $result = $checkStmt->get_result();
+    $checkStmt->close(); // Close check statement
 
-        // Handle file upload
-        $documents = [];
-        if (!empty($_FILES['documents']['name'][0])) {
-            $uploadsDir = 'uploads/';
-            foreach ($_FILES['documents']['name'] as $key => $name) {
-                $tmpName = $_FILES['documents']['tmp_name'][$key];
-                $filePath = $uploadsDir . basename($name);
-                if (move_uploaded_file($tmpName, $filePath)) {
-                    $documents[] = $filePath; // Store the file path
-                }
-            }
+    if ($result->num_rows > 0) {
+        // Fetch existing objectives and files
+        $existingObjectives = $result->fetch_assoc();
+        $existingCourseObjectives = $existingObjectives['course_objectives'];
+        $existingContentObjectives = $existingObjectives['content_objectives'];
+        $existingFiles = $existingObjectives['file']; // Assuming this field holds existing files
+
+        // Append new objectives
+        $updatedCourseObjectives = $existingCourseObjectives . "\n" . $courseObjectives;
+        $updatedContentObjectives = $existingContentObjectives . "\n" . $contentObjectives;
+
+        // Append new file if provided
+        if ($fileDestination) {
+            $updatedFiles = $existingFiles ? $existingFiles . ',' . $fileDestination : $fileDestination;
+        } else {
+            $updatedFiles = $existingFiles; // No new file, keep existing
         }
 
-        // Insert into course_objectives table
-        $stmtInsert = $conn->prepare("INSERT INTO course_objectives (course_id, objectives, content_objectives, documents) VALUES (?, ?, ?, ?)");
-        $stmtInsert->bind_param("isss", $courseId, $objectives, $contentObjectives, json_encode($documents));
-        $stmtInsert->execute();
-
-        // Redirect after submission
-        header("Location: mycourse.php?course_id=" . $courseId);
-        exit();
+        // Update existing record
+        $updateStmt = $conn->prepare("UPDATE course_objectives SET course_objectives = ?, content_objectives = ?, file = ? WHERE course_id = ?");
+        $updateStmt->bind_param("sssi", $updatedCourseObjectives, $updatedContentObjectives, $updatedFiles, $courseId);
+        $success = $updateStmt->execute();
+        $updateStmt->close(); // Close update statement
+    } else {
+        // Insert new record
+        $insertStmt = $conn->prepare("INSERT INTO course_objectives (course_id, course_objectives, content_objectives, file) VALUES (?, ?, ?, ?)");
+        $insertStmt->bind_param("isss", $courseId, $courseObjectives, $contentObjectives, $fileDestination);
+        $success = $insertStmt->execute();
+        $insertStmt->close(); // Close insert statement
     }
-} else {
-    // Redirect to trainer dashboard if no course_id is provided
-    header("Location: trainerdash.php");
-    exit();
+
+    if ($success) {
+        echo "<script>alert('Course objectives updated successfully!');</script>";
+    } else {
+        echo "<script>alert('Error updating course objectives.');</script>";
+    }
 }
 ?>
 
@@ -77,14 +91,14 @@ if (isset($_GET['course_id'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Courses</title>
+    <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="fontawesome-free-6.4.0-web/css/all.min.css">
-    <link rel="stylesheet" href="styles.css"> <!-- Link to your main CSS file -->
     <style>
-        /* Basic styles for my courses page */
+        /* General Styling */
         html, body {
             height: 100%;
             margin: 0;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         .header {
@@ -95,7 +109,6 @@ if (isset($_GET['course_id'])) {
             align-items: center;
             padding: 0 15px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            position: relative;
         }
 
         .header h2 {
@@ -112,7 +125,7 @@ if (isset($_GET['course_id'])) {
             font-size: 16px;
         }
 
-        .search-icon, .user-icon, .menu-icon {
+        .search-icon, .user-icon {
             cursor: pointer;
             font-size: 36px;
             margin-left: 20px;
@@ -123,137 +136,168 @@ if (isset($_GET['course_id'])) {
             height: 100%;
             width: 200px;
             position: fixed;
-            left: -300px; /* Initially hidden */
-            background-color: #343a40; /* Dark background */
-            color: white; /* White text */
+            left: -300px;
+            background-color: #343a40;
+            color: white;
             transition: left 0.3s;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
             z-index: 1000;
             padding: 15px;
         }
 
         .sidebar h2 {
-            color: #ffffff; /* Title color */
-            margin: 0 0 20px 0; /* Spacing below title */
-            font-size: 24px; /* Title size */
+            color: #ffffff;
+            margin: 0 0 20px;
+            font-size: 24px;
         }
 
         .sidebar a {
             display: block;
             padding: 10px 15px;
-            color: #ffffff; /* White text */
+            color: white;
             text-decoration: none;
             border-radius: 4px;
             margin: 5px 0;
-            transition: background-color 0.3s, color 0.3s; /* Transition for hover effect */
+            transition: background-color 0.3s;
         }
 
         .sidebar a:hover {
-            background-color: #495057; /* Darker background on hover */
-            color: #ffffff; /* Keep text white on hover */
+            background-color: #495057;
         }
 
         .content {
             padding: 20px;
-            margin-left: 220px; /* Adjusted for sidebar width */
+            margin-left: 220px;
+        }
+
+        /* Course Cards */
+        .course-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
         }
 
         .course-card {
             border: 1px solid #ccc;
             border-radius: 8px;
-            margin: 10px 0;
-            padding: 15px;
+            margin: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            height: 400px;
+            width: calc(30% - 20px);
+            transition: transform 0.2s;
+            cursor: pointer;
+            background: #fff;
+        }
+
+        .course-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .course-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .course-info {
+            padding: 10px;
+            text-align: center;
         }
 
         .course-title {
-            font-size: 20px;
+            font-size: 16px;
             font-weight: bold;
+            margin-bottom: 5px;
         }
 
         .course-description {
-            font-size: 14px;
-            margin: 5px 0;
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: #666;
         }
 
-        .objectives {
-            margin: 10px 0;
+        .course-duration {
+            font-size: 12px;
+            color: #888;
         }
 
-        .documents {
-            margin-top: 10px;
-        }
-
-        .document-link {
-            color: #007bff;
-            text-decoration: none;
-        }
-
-        .document-link:hover {
-            text-decoration: underline;
-        }
-
-        /* Objectives Form Styles */
-        #objectivesForm {
-            background-color: #f8f9fa;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 20px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        #objectivesForm h2 {
-            margin-top: 0;
-            color: #007bff;
-        }
-
-        #objectivesForm label {
-            font-weight: bold;
-            margin-top: 10px;
-            display: block;
-        }
-
-        #objectivesForm textarea,
-        #objectivesForm input[type="file"] {
-            width: 100%;
-            padding: 1px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            margin-top: 5px;
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-
-        #objectivesForm button {
+        /* Button Styling */
+        .view-btn, .update-btn {
             background-color: #007bff;
             color: white;
             border: none;
-            border-radius: 5px;
             padding: 10px 15px;
             cursor: pointer;
-            transition: background-color 0.3s, transform 0.3s;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-top: 10px;
+            transition: background-color 0.3s;
         }
 
-        #objectivesForm button:hover {
+        .view-btn:hover, .update-btn:hover {
             background-color: #0056b3;
-            transform: scale(1.05);
+        }
+
+        /* Update Form Styling */
+        .update-form-container {
+            margin-top: 20px;
+        }
+
+        .update-form-container h2 {
+            margin-bottom: 10px;
+        }
+
+        .update-form-container textarea {
+            width: 100%;
+            min-height: 100px;
+            margin-bottom: 10px;
+        }
+
+        .save-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .save-btn:hover {
+            background-color: #218838;
         }
     </style>
     <script>
         function toggleSidebar() {
             const sidebar = document.querySelector('.sidebar');
-            sidebar.style.left = sidebar.style.left === '0px' ? '-300px' : '0px'; // Toggle sidebar
+            sidebar.style.left = sidebar.style.left === '0px' ? '-300px' : '0px';
         }
 
-        function executeSearch() {
-            const searchBar = document.getElementById('search-bar');
-            const searchValue = searchBar.value.trim();
-            if (searchValue) {
-                window.location.href = 'search_results.php?q=' + encodeURIComponent(searchValue);
-            } else {
-                alert("Please enter a search term.");
-            }
+        function showUpdateForm(courseId) {
+            // Prepare the form for the clicked course
+            const formContent = ` 
+                <form action="mycourse.php" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="course_id" value="${courseId}">
+                    <label>Course Objectives:</label>
+                    <textarea name="course_objectives" required></textarea>
+
+                    <label>Content Objectives:</label>
+                    <textarea name="content_objectives" required></textarea>
+
+                    <label>Upload file:</label>
+                    <input type="file" name="course_file">
+
+                    <button type="submit" class="save-btn">Save Changes</button>
+                </form>
+            `;
+
+            // Show the form
+            document.getElementById("update-form-content").innerHTML = formContent;
+            document.getElementById("update-form-container").style.display = "block";
         }
     </script>
 </head>
@@ -264,9 +308,9 @@ if (isset($_GET['course_id'])) {
             <i class="fas fa-bars"></i>
         </span>
         <h2>Calea Portal</h2>
-        <input type="text" id="search-bar" class="search-bar" placeholder="Search..." onkeypress="if(event.key === 'Enter') executeSearch()">
-        <span class="search-icon" onclick="executeSearch()"><i class="fas fa-search"></i></span>
-        <span class="user-icon" onclick="toggleUserTooltip()">
+        <input type="text" id="search-bar" class="search-bar" placeholder="Search...">
+        <span class="search-icon"><i class="fas fa-search"></i></span>
+        <span class="user-icon">
             <i class="fas fa-user"></i>
             <div class="username-tooltip"><?php echo htmlspecialchars($username); ?></div>
         </span>
@@ -280,64 +324,34 @@ if (isset($_GET['course_id'])) {
     </div>
 
     <div class="content">
-        <h1>My Course</h1>
+        <h1>My Assigned Courses</h1>
+        <div class="course-container">
+            <?php if ($courses->num_rows > 0): ?>
+                <?php while ($course = $courses->fetch_assoc()): ?>
+                    <div class="course-card">
+                        <img src="<?php echo !empty($course['image']) ? htmlspecialchars($course['image']) : 'default_course.png'; ?>" alt="Course Image">
+                        <div class="course-info">
+                            <h2 class="course-title"><?php echo htmlspecialchars($course['title']); ?></h2>
+                            <p class="course-description"><?php echo htmlspecialchars($course['description']); ?></p>
+                            <p class="course-duration">Duration: <?php echo htmlspecialchars($course['duration']); ?> weeks</p>
+                        </div>
 
-        <?php if (isset($course)): ?>
-            <div class="course-card">
-                <div class="course-title"><?php echo htmlspecialchars($course['title']); ?></div>
-                <div class="course-description"><?php echo htmlspecialchars($course['description']); ?></div>
-                
-                <div class="objectives">
-                    <strong>Objectives:</strong>
-                    <p><?php echo nl2br(htmlspecialchars($course['objectives'])); ?></p>
-                </div>
+                        <!-- View and Update Buttons -->
+                        <button class="view-btn" onclick="window.location.href='view_course.php?course_id=<?php echo $course['id']; ?>'">View</button>
+                        <button class="update-btn" onclick="showUpdateForm(<?php echo $course['id']; ?>)">Update Course</button>
+                    </div>
+                <?php endwhile; ?>
+            <?php else: ?>
+                <p>No assigned courses found.</p>
+            <?php endif; ?>
+        </div>
 
-                <div class="objectives">
-                    <strong>Content Objectives:</strong>
-                    <p><?php echo nl2br(htmlspecialchars($course['content_objectives'])); ?></p>
-                </div>
-
-                <div class="documents">
-                    <strong>Uploaded Documents:</strong>
-                    <?php
-                    $documents = json_decode($course['documents'], true);
-                    if (!empty($documents)): ?>
-                        <?php foreach ($documents as $document): ?>
-                            <a href="<?php echo htmlspecialchars($document); ?>" class="document-link" target="_blank">
-                                <?php echo htmlspecialchars(basename($document)); ?>
-                            </a>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <p>No documents uploaded.</p>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <!-- Objectives Form -->
-            <div id="objectivesForm">
-                <h2>Add Course Objectives</h2>
-                <form method="POST" action="mycourse.php" enctype="multipart/form-data">
-                    <input type="hidden" name="course_id" value="<?php echo htmlspecialchars($course['id']); ?>">
-                    <label for="course-objectives">Objectives:</label>
-                    <textarea id="course-objectives" name="objectives" rows="4" required></textarea>
-                    
-                    <label for="content-objectives">Content Objectives:</label>
-                    <textarea id="content-objectives" name="content_objectives" rows="4" required></textarea>
-                    
-                    <label for="documents">Upload Documents:</label>
-                    <input type="file" id="documents" name="documents[]" multiple>
-                    
-                    <button type="submit">Submit Objectives</button>
-                </form>
-            </div>
-        <?php else: ?>
-            <p>No course found.</p>
-        <?php endif; ?>
-
-        <?php
-        $stmt->close(); // Close the statement
-        $conn->close(); // Close the database connection
-        ?>
+        <!-- Update Form Container -->
+        <div class="update-form-container" id="update-form-container" style="display:none;">
+            <h2>Update Course</h2>
+            <div id="update-form-content"></div>
+        </div>
     </div>
+
 </body>
 </html>
