@@ -1,6 +1,6 @@
 <?php
 session_start();
-include 'dbconn.php'; // Assuming your connection code is in this file
+include 'dbconn.php'; // Your database connection file
 
 // Fetch username from the users table based on user ID
 $username = 'Guest'; // Default to 'Guest'
@@ -29,11 +29,12 @@ if (isset($_SESSION['user_id'])) {
         html, body {
             height: 100%;
             margin: 0;
+            font-family: Arial, sans-serif;
         }
 
         .header {
             height: 55px;
-            background-color: #007bff;
+            background-color: #007bff; /* Same as trainer dashboard */
             color: white;
             display: flex;
             align-items: center;
@@ -80,14 +81,15 @@ if (isset($_SESSION['user_id'])) {
         .username-tooltip {
             display: none;
             position: absolute;
-            right: 0;
-            top: 100%; /* Position below the icon */
-            background-color: white;
-            border: 1px solid #ccc;
+            top: 40px; /* Position below the icon */
+            left: -15px; /* Align to the left */
+            background-color: #333;
+            color: #fff;
             padding: 5px;
-            border-radius: 4px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            z-index: 10;
+            border-radius: 10px;
+            z-index: 1000;
+            font-size: 14px;
+            white-space: nowrap;
         }
 
         .user-icon:hover .username-tooltip {
@@ -96,7 +98,7 @@ if (isset($_SESSION['user_id'])) {
 
         .sidebar {
             height: 100%;
-            width: 200px;
+            width: 180px;
             position: fixed;
             left: -300px; /* Initially hidden */
             background-color: #f9f9f9;
@@ -184,8 +186,11 @@ if (isset($_SESSION['user_id'])) {
 
     <div class="content">
         <h1>Trainee Dashboard</h1>
-        <p>Welcome to the trainee dashboard. Use the menu to navigate.</p>
+        <p>Welcome to the trainee dashboard. Here you have the opportunity to learn and get and get new skills.<br>
+        Get use of the best free learning available platform to upgrade and open your your eyes to the world of technology.</p>
+        <p>Below is the list of the available courses you can learn in this platform, open your mind and Learn here<br></p>
     </div>
+
 
 </body>
 </html>

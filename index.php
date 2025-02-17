@@ -17,9 +17,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $qualifications = isset($_POST['qualifications']) ? trim($_POST['qualifications']) : null;
     $expertise = isset($_POST['expertise']) ? trim($_POST['expertise']) : null;
 
-    // Debugging: Output POST data
-    var_dump($_POST);
-
     // Validate username
     if (empty($username) || !preg_match('/^[a-zA-Z0-9_]{3,20}$/', $username)) {
         $_SESSION['error'] = "Invalid username. Must be 3-20 characters long and contain only letters, numbers, or underscores.";
@@ -31,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Hash the password
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-        // Check if the username already exists in the database
+        // Check if the username already exists in the users table
         $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
         $stmt->bind_param("s", $username);
         $stmt->execute();
@@ -40,28 +37,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($result->num_rows > 0) {
             $_SESSION['error'] = "Username already taken. Please choose another.";
         } else {
-            // Prepare the SQL statement
+            // Insert into users table for all roles
             $stmt = $conn->prepare("INSERT INTO users (username, password, role, qualifications, expertise) VALUES (?, ?, ?, ?, ?)");
             if (!$stmt) {
                 $_SESSION['error'] = "Error preparing statement: " . $conn->error;
             } else {
-                // Bind parameters based on role
                 if ($role === 'trainer') {
                     $stmt->bind_param("sssss", $username, $hashed_password, $role, $qualifications, $expertise);
                 } else {
-                    $stmt->bind_param("ssss", $username, $hashed_password, $role, null); // No qualifications or expertise for non-trainers
+                    // For trainees and admins, set qualifications and expertise to NULL
+                    $qualifications_param = null; // or use "" for an empty string
+                    $expertise_param = null; // or use "" for an empty string
+                    $stmt->bind_param("sssss", $username, $hashed_password, $role, $qualifications_param, $expertise_param);
                 }
-
-                // Execute the statement
                 if ($stmt->execute()) {
                     $_SESSION['success'] = "Registration successful!";
-                    session_regenerate_id(true); // Regenerate session ID
-                    header("Location: " . ($role === 'trainee' ? "trainee_dash.php" : "login.php"));
+                    session_regenerate_id(true);
+                    // Redirect to login page for all users
+                    header("Location: login.php"); 
                     exit();
                 } else {
                     $_SESSION['error'] = "Error executing statement: " . $stmt->error;
+                    // Debugging: Print the error
+                    error_log("Error: " . $stmt->error);
                 }
-                $stmt->close();
             }
         }
     }
@@ -70,7 +69,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 // Close the database connection
 $conn->close();
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -141,10 +139,10 @@ $conn->close();
 
             <div id="trainer-fields" style="display:none;">
                 <label for="qualifications">Qualifications:</label>
-                <input type="text" name="qualifications" placeholder="Qualifications" required>
+                <input type="text" name="qualifications" placeholder="Qualifications">
 
                 <label for="expertise">Areas of Expertise:</label>
-                <input type="text" name="expertise" placeholder="Areas of Expertise" required>
+                <input type="text" name="expertise" placeholder="Areas of Expertise" >
             </div>
 
             <button type="submit">Register</button>
