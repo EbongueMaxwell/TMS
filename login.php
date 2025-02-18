@@ -31,6 +31,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $_SESSION['user_id'] = $user['id'];
                     $_SESSION['role'] = $user['role'];
 
+                    // Log attendance on login
+                    $userId = $user['id'];
+                    $courseId = 1; // Adjust according to your course logic
+                    $date = date('Y-m-d');
+
+                    // Check for existing attendance record
+                    $checkStmt = $conn->prepare("SELECT * FROM attendance WHERE user_id = ? AND course_id = ? AND date = ?");
+                    $checkStmt->bind_param("iis", $userId, $courseId, $date);
+                    $checkStmt->execute();
+                    $checkResult = $checkStmt->get_result();
+
+                    if ($checkResult->num_rows == 0) { // No record found, insert new record
+                        $attendanceStmt = $conn->prepare("INSERT INTO attendance (user_id, course_id, date) VALUES (?, ?, ?)");
+                        $attendanceStmt->bind_param("iis", $userId, $courseId, $date);
+                        $attendanceStmt->execute();
+                        $attendanceStmt->close();
+                    }
+
                     // Redirect based on user role
                     if ($_SESSION['role'] === 'admin') {
                         header("Location: admindash.php");

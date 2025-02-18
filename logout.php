@@ -1,14 +1,23 @@
 <?php
-session_start(); // Start the session
+session_start();
 include 'dbconn.php';
 
-// Unset all session variables
-$_SESSION = [];
+if (isset($_SESSION['user_id'])) {
+    $userId = $_SESSION['user_id'];
+    $courseId = 1; // Adjust according to your course logic
+    $date = date('Y-m-d');
 
-// Destroy the session
-session_destroy();
+    // Log attendance on logout
+    $attendanceStmt = $conn->prepare("INSERT INTO attendance (user_id, course_id, date) VALUES (?, ?, ?)");
+    $attendanceStmt->bind_param("iis", $userId, $courseId, $date);
+    $attendanceStmt->execute();
+    $attendanceStmt->close();
 
-// Redirect to the login page
-header("Location: login.php");
-exit();
+    // Clear session
+    session_unset();
+    session_destroy();
+
+    header("Location: login.php");
+    exit();
+}
 ?>

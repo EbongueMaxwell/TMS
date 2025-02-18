@@ -1,5 +1,4 @@
 <?php
-session_start();
 include 'dbconn.php';
 include 'adminheader.php'; // Include the admin header and sidebar
 

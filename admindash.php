@@ -140,7 +140,7 @@ if (isset($_POST['courseId'])) {
 <body>
 
     <div class="content">
-        <h1>My Courses</h1>
+        <h1>Admin Dashboard</h1>
         <?php if (!empty($enrolledCourses)): ?>
             <div class="course-container">
                 <?php foreach ($enrolledCourses as $courseId => $courseData): ?>
