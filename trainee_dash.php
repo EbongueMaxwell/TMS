@@ -1,196 +1,152 @@
 <?php
-session_start();
+include 'traineeheader.php'; // Include the header and sidebar
 include 'dbconn.php'; // Your database connection file
 
-// Fetch username from the users table based on user ID
-$username = 'Guest'; // Default to 'Guest'
-if (isset($_SESSION['user_id'])) {
-    $userId = $_SESSION['user_id']; // Assuming user ID is stored in the session
-    $stmt = $conn->prepare("SELECT username FROM users WHERE id = ?");
+// Fetch all available courses
+$courses = [];
+$stmtCourses = $conn->prepare("SELECT * FROM courses");
+$stmtCourses->execute();
+$resultCourses = $stmtCourses->get_result();
+while ($course = $resultCourses->fetch_assoc()) {
+    $courses[] = $course; // Add each course to the courses array
+}
+$stmtCourses->close();
+?>
+
+<div class="content">
+    <h1>Trainee Dashboard</h1>
+    <p>Welcome to the trainee dashboard.<br> Here you have the opportunity to learn and gain new skills.<br>
+    Take advantage of the best free learning available on this platform to upgrade your knowledge.</p>
+
+    <h1>Note</h1>
+    <p>Note: If you register for a course, make sure to terminate it before registering for a new course.</p>
+
+    <h2>Available Courses</h2>
+    <div class="course-container">
+        <?php if (!empty($courses)): ?>
+            <?php foreach ($courses as $course): ?>
+                <div class="course-card">
+                    <img src="<?php echo htmlspecialchars($course['image_url']); ?>" alt="<?php echo htmlspecialchars($course['title']); ?> Image"> <!-- Course image -->
+                    <h3><?php echo htmlspecialchars($course['title']); ?></h3>
+                    <p><?php echo htmlspecialchars($course['description']); ?></p>
+                    <p><strong>Duration:</strong> <?php echo htmlspecialchars($course['duration']); ?> weeks</p>
+                    <a href="?course_id=<?php echo $course['id']; ?>" class="btn">Enroll</a>
+                </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <p>No courses available at the moment.</p>
+        <?php endif; ?>
+    </div>
+</div>
+
+<style>
+    /* CSS styles for course cards and layout */
+    .content {
+        padding: 20px;
+        background-color: whitesmoke;
+        transition: margin-left 0.3s;
+    }
+
+    .course-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px; /* Space between course cards */
+    }
+
+    .course-card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        max-width: 300px; /* Set a maximum width for the card */
+        text-align: center; /* Center text */
+    }
+
+    .course-card img {
+        max-width: 100%; /* Responsive image */
+        height: auto; /* Maintain aspect ratio */
+        border-radius: 4px; /* Slightly rounded corners */
+    }
+
+    .course-card h3 {
+        margin: 10px 0 5px; /* Spacing */
+        font-size: 18px;
+    }
+
+    .course-card p {
+        margin: 5px 0;
+        color: #555;
+    }
+
+    .btn {
+        background-color: #007bff; /* Button color */
+        color: white; /* Button text color */
+        padding: 10px;
+        width: 70px;
+        text-align: center;
+        border-radius: 5px;
+        text-decoration: none;
+        display: inline-block;
+        transition: background-color 0.3s;
+    }
+
+    .btn:hover {
+        background-color: #0056b3; /* Darker shade on hover */
+    }
+</style>
+
+<?php
+// Enrollment logic
+if (isset($_GET['course_id']) && isset($_SESSION['user_id'])) {
+    $courseId = $_GET['course_id'];
+    $userId = $_SESSION['user_id'];
+
+    // Check if the trainee is already enrolled in another course
+    $stmt = $conn->prepare("SELECT c.duration, e.enrollment_date FROM enrollments e 
+                             JOIN courses c ON e.course_id = c.id 
+                             WHERE e.trainee_id = ? 
+                             ORDER BY e.enrollment_date DESC LIMIT 1");
     $stmt->bind_param("i", $userId);
     $stmt->execute();
     $result = $stmt->get_result();
+
     if ($result->num_rows > 0) {
-        $user = $result->fetch_assoc();
-        $username = $user['username']; // Set the username from the database
+        $enrollment = $result->fetch_assoc();
+        $duration = $enrollment['duration'];
+        $enrollmentDate = new DateTime($enrollment['enrollment_date']);
+        $endDate = clone $enrollmentDate;
+        $endDate->modify("+$duration weeks");
+
+        $now = new DateTime();
+        if ($now < $endDate) {
+            echo "<script>alert('You cannot enroll in another course until " . $endDate->format('Y-m-d') . ".');</script>";
+        } else {
+            // Proceed with enrollment
+            $stmtEnroll = $conn->prepare("INSERT INTO enrollments (trainee_id, course_id) VALUES (?, ?)");
+            $stmtEnroll->bind_param("ii", $userId, $courseId);
+            if ($stmtEnroll->execute()) {
+                header("Location: traineecourse.php"); // Redirect to My Courses
+                exit();
+            } else {
+                echo "<script>alert('Error enrolling in the course.');</script>";
+            }
+            $stmtEnroll->close();
+        }
+    } else {
+        // No current enrollments, proceed with enrollment
+        $stmtEnroll = $conn->prepare("INSERT INTO enrollments (trainee_id, course_id) VALUES (?, ?)");
+        $stmtEnroll->bind_param("ii", $userId, $courseId);
+        if ($stmtEnroll->execute()) {
+            header("Location: traineecourse.php"); // Redirect to My Courses
+            exit();
+        } else {
+            echo "<script>alert('Error enrolling in the course.');</script>";
+        }
+        $stmtEnroll->close();
     }
-    $stmt->close();
 }
 ?>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trainee Dashboard</title>
-    <link rel="stylesheet" href="fontawesome-free-6.4.0-web/css/all.min.css">
-    <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
-
-        .header {
-            height: 55px;
-            background-color: #007bff; /* Same as trainer dashboard */
-            color: white;
-            display: flex;
-            align-items: center;
-            padding: 0 15px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            position: relative;
-        }
-
-        .header h2 {
-            margin: 0 15px; /* Ensure consistent spacing */
-        }
-
-        .welcome-message {
-            margin-left: auto; /* Align to the right */
-            font-size: 16px; /* Font size */
-            font-weight: bold; /* Bold text */
-        }
-
-        .search-bar {
-            display: block; /* Always visible */
-            background-color: white;
-            border: 1px solid #ccc;
-            padding: 10px; /* Increased padding for height */
-            border-radius: 22px;
-            width: 400px; /* Adjust width as needed */
-            margin-left: 15px; /* Space between search bar and icons */
-            font-size: 16px; /* Increase font size */
-        }
-
-        .search-icon {
-            cursor: pointer;
-            font-size: 36px; /* Increased font size for the search icon */
-            margin-left: 15px; /* Space between icon and search bar */
-            line-height: 55px; /* Center vertically */
-        }
-
-        .user-icon {
-            cursor: pointer;
-            font-size: 36px; /* Increased font size for user icon */
-            position: relative;
-            margin-left: 20px; /* Space between icons */
-        }
-
-        .username-tooltip {
-            display: none;
-            position: absolute;
-            top: 40px; /* Position below the icon */
-            left: -15px; /* Align to the left */
-            background-color: #333;
-            color: #fff;
-            padding: 5px;
-            border-radius: 10px;
-            z-index: 1000;
-            font-size: 14px;
-            white-space: nowrap;
-        }
-
-        .user-icon:hover .username-tooltip {
-            display: block; /* Show on hover */
-        }
-
-        .sidebar {
-            height: 100%;
-            width: 180px;
-            position: fixed;
-            left: -300px; /* Initially hidden */
-            background-color: #f9f9f9;
-            transition: left 0.3s;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            padding: 15px; /* Add padding around sidebar items */
-        }
-
-        .sidebar a {
-            display: block; /* Make links block elements */
-            padding: 10px 15px; /* Add padding for links */
-            color: #333; /* Text color */
-            text-decoration: none; /* Remove underline */
-            border-radius: 4px; /* Rounded corners */
-            margin: 5px 0; /* Spacing between links */
-            transition: background-color 0.3s; /* Smooth background color transition */
-        }
-
-        .sidebar a:hover {
-            background-color: #007bff; /* Highlight on hover */
-            color: white; /* Change text color on hover */
-        }
-
-        .content {
-            padding: 20px;
-            transition: margin-left 0.3s;
-            margin-left: 0; /* Initial margin when sidebar is hidden */
-        }
-
-        .show-sidebar .sidebar {
-            left: 0; /* Show the sidebar */
-        }
-
-        .show-sidebar .content {
-            margin-left: 200px; /* Shift content to the right when sidebar is shown */
-        }
-    </style>
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const body = document.body;
-            if (sidebar.style.left === '0px') {
-                sidebar.style.left = '-300px'; // Hide sidebar
-                body.classList.remove('show-sidebar');
-            } else {
-                sidebar.style.left = '0px'; // Show sidebar
-                body.classList.add('show-sidebar');
-            }
-        }
-
-        function executeSearch() {
-            const searchBar = document.getElementById('search-bar');
-            const searchValue = searchBar.value.trim();
-            if (searchValue) {
-                window.location.href = 'search_results.php?q=' + encodeURIComponent(searchValue);
-            } else {
-                alert("Please enter a search term.");
-            }
-        }
-    </script>
-</head>
-<body>
-
-    <div class="header">
-        <span class="menu-icon" onclick="toggleSidebar()">
-            <i class="fas fa-bars"></i> <!-- Menu icon -->
-        </span>
-        <h2>Calea Portal</h2><!-- Header title -->
-        <div class="welcome-message">Welcome, <?php echo htmlspecialchars($username); ?>!</div> <!-- Welcome message -->
-        <input type="text" id="search-bar" class="search-bar" placeholder="Search..." onkeypress="if(event.key === 'Enter') executeSearch()">
-        <span class="search-icon" onclick="executeSearch()"><i class="fas fa-search"></i></span> <!-- Search icon -->
-        <span class="user-icon">
-            <i class="fas fa-user"></i> <!-- User icon -->
-            <div class="username-tooltip"><?php echo htmlspecialchars($username); ?></div> <!-- Username tooltip -->
-        </span>
-    </div>
-
-    <div id="sidebar" class="sidebar">
-        <a href="my-courses.php">My Courses</a>
-        <a href="attendance.php">Track Attendance</a>
-        <a href="reports.php">View Reports</a>
-        <a href="logout.php">Logout</a>
-    </div>
-
-    <div class="content">
-        <h1>Trainee Dashboard</h1>
-        <p>Welcome to the trainee dashboard. Here you have the opportunity to learn and get and get new skills.<br>
-        Get use of the best free learning available platform to upgrade and open your your eyes to the world of technology.</p>
-        <p>Below is the list of the available courses you can learn in this platform, open your mind and Learn here<br></p>
-    </div>
-
-
-</body>
-</html>

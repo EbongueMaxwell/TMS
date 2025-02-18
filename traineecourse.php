@@ -1,7 +1,7 @@
 <?php
-
+session_start();
 include 'dbconn.php'; // Your database connection file
-include 'adminheader.php'; // Include the header and sidebar
+include 'traineeheader.php'; // Include the header and sidebar
 
 // Fetch enrolled courses and their objectives
 $enrolledCourses = [];
@@ -34,19 +34,18 @@ while ($course = $resultEnrollments->fetch_assoc()) {
 $stmtEnrollments->close();
 
 // Function to send notification
-function sendNotification($conn, $userId, $action) {
-    $stmt = $conn->prepare("INSERT INTO notifications (user_id, action) VALUES (?, ?)");
-    $stmt->bind_param("is", $userId, $action);
+function sendNotification($conn, $traineeId, $action) {
+    $stmt = $conn->prepare("INSERT INTO notifications (trainee_id, action) VALUES (?, ?)");
+    $stmt->bind_param("is", $traineeId, $action);
     $stmt->execute();
     $stmt->close();
 }
 
-// Check if a course detail is toggled
-if (isset($_POST['courseId'])) {
-    $courseId = $_POST['courseId'];
-    $userId = $_SESSION['user_id'];
-    sendNotification($conn, $userId, "Toggled details for course ID: $courseId");
-    // Optionally you can return a response
+// Check if action is performed via POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    $traineeId = $_SESSION['user_id'];
+    $action = $_POST['action'];
+    sendNotification($conn, $traineeId, $action);
     echo json_encode(['status' => 'success']);
     exit;
 }
@@ -107,6 +106,22 @@ if (isset($_POST['courseId'])) {
             padding: 15px;
             border-radius: 5px;
         }
+
+        .btn {
+            background-color: #007bff; /* Button color */
+            color: white; /* Button text color */
+            padding: 10px;
+            width: 70px;
+            text-align: center;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #0056b3; /* Darker shade on hover */
+        }
     </style>
     <script>
         function executeSearch() {
@@ -129,7 +144,7 @@ if (isset($_POST['courseId'])) {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded'
                     },
-                    body: 'courseId=' + courseId
+                    body: 'action=Toggled details for course ID: ' + courseId
                 });
             } else {
                 details.style.display = 'none'; // Hide details

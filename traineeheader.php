@@ -1,6 +1,5 @@
 <?php
-session_start();
-include 'dbconn.php';
+include 'dbconn.php'; // Your database connection file
 include 'adminheader.php'; // Include the admin header and sidebar
 
 // Redirect if not admin
@@ -123,6 +122,7 @@ if (isset($_GET['delete'])) {
         }
         h1 {
             color: #007bff;
+            text-align: center;
         }
         table {
             width: 100%;
@@ -132,7 +132,7 @@ if (isset($_GET['delete'])) {
         }
         th, td {
             border: 1px solid #007bff;
-            padding: 10px;
+            padding: 12px;
             text-align: left;
         }
         th {
@@ -161,6 +161,9 @@ if (isset($_GET['delete'])) {
             border-radius: 5px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
         label {
             display: block;
@@ -182,6 +185,8 @@ if (isset($_GET['delete'])) {
             border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.3s;
+            font-size: 16px;
+            width: 100%;
         }
         button:hover {
             background-color: #0056b3;
@@ -197,6 +202,7 @@ if (isset($_GET['delete'])) {
     </style>
 </head>
 <body>
+
     <h1>Manage Courses</h1>
 
     <?php if (isset($successMessage)): ?>
