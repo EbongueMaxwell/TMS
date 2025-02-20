@@ -168,7 +168,7 @@ if (isset($_POST['courseId'])) {
                 <?php endforeach; ?>
             </div>
         <?php else: ?>
-            <p>You are not enrolled in any courses at the moment.</p>
+            <p>Welcome to the Dashboard.</p>
         <?php endif; ?>
     </div>
 

@@ -1,21 +1,22 @@
 <?php
-session_start();
 include 'dbconn.php'; // Your database connection file
+$username = 'Guest'; // Default username
+$user_id = null; // Initialize user_id
 
-// Fetch username from the users table based on user ID
-$username = 'Guest'; // Default to 'Guest'
 if (isset($_SESSION['user_id'])) {
-    $userId = $_SESSION['user_id']; // Assuming user ID is stored in the session
+    $user_id = $_SESSION['user_id']; // Get user ID from session
+    $userId = $_SESSION['user_id']; // Redundant assignment, can remove this line
     $stmt = $conn->prepare("SELECT username FROM users WHERE id = ?");
     $stmt->bind_param("i", $userId);
     $stmt->execute();
     $result = $stmt->get_result();
     if ($result->num_rows > 0) {
         $user = $result->fetch_assoc();
-        $username = $user['username']; // Set the username from the database
+        $username = $user['username']; // Set username from database
     }
     $stmt->close();
 }
+// Now, adminheader.php only contains PHP logic and sets $username and $user_id
 ?>
 
 <!DOCTYPE html>
@@ -89,7 +90,7 @@ if (isset($_SESSION['user_id'])) {
 
         .sidebar {
             height: 100%;
-            width: 140px;
+            width: 165px;
             position: fixed;
             left: -300px;
             background-color: #f9f9f9;
@@ -159,7 +160,7 @@ if (isset($_SESSION['user_id'])) {
 
     <div id="sidebar" class="sidebar">
         <a href="admindash.php">Dashboard</a>
-        <a href="manage-courses.php">My Courses</a>
+        <a href="manage-courses.php">Create Courses</a>
         <a href="reports.php">View Reports</a>
         <a href="logout.php">Logout</a>
     </div>

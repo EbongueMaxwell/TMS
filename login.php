@@ -1,6 +1,12 @@
 <?php
 session_start();
-include 'dbconn.php'; // Assuming your connection code is in this file
+ob_start(); // Start output buffering
+include 'dbconn.php'; // Ensure this file contains your database connection code
+
+// Enable error reporting
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -25,40 +31,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                 // Verify password
                 if (password_verify($password, $user['password'])) {
-                    // Regenerate session ID
+                    // Regenerate session ID for security
                     session_regenerate_id(true);
+
                     // Set session variables
                     $_SESSION['user_id'] = $user['id'];
                     $_SESSION['role'] = $user['role'];
 
-                    // Log attendance on login
-                    $userId = $user['id'];
-                    $courseId = 1; // Adjust according to your course logic
-                    $date = date('Y-m-d');
-
-                    // Check for existing attendance record
-                    $checkStmt = $conn->prepare("SELECT * FROM attendance WHERE user_id = ? AND course_id = ? AND date = ?");
-                    $checkStmt->bind_param("iis", $userId, $courseId, $date);
-                    $checkStmt->execute();
-                    $checkResult = $checkStmt->get_result();
-
-                    if ($checkResult->num_rows == 0) { // No record found, insert new record
-                        $attendanceStmt = $conn->prepare("INSERT INTO attendance (user_id, course_id, date) VALUES (?, ?, ?)");
-                        $attendanceStmt->bind_param("iis", $userId, $courseId, $date);
-                        $attendanceStmt->execute();
-                        $attendanceStmt->close();
-                    }
+                    // Debugging: Log user ID and role
+                    error_log("User ID: " . $_SESSION['user_id']);
+                    error_log("User Role: " . $_SESSION['role']);
 
                     // Redirect based on user role
-                    if ($_SESSION['role'] === 'admin') {
-                        header("Location: admindash.php");
-                    } elseif ($_SESSION['role'] === 'trainer') {
-                        header("Location: trainerdash.php");
-                    } elseif ($_SESSION['role'] === 'trainee') {
-                        header("Location: trainee_dash.php");
-                    } else {
-                        // Optional: Handle unexpected roles
-                        $_SESSION['error'] = "Unexpected user role.";
+                    error_log("Redirecting user with role: " . $_SESSION['role']); // Debugging line
+                    switch ($_SESSION['role']) {
+                        case 'admin':
+                            header("Location: admindash.php");
+                            break;
+                        case 'trainer':
+                            header("Location: trainerdash.php");
+                            break;
+                        case 'trainee':
+                            header("Location: trainee_dash.php");
+                            break;
+                        default:
+                            $_SESSION['error'] = "Unexpected user role.";
+                            break;
                     }
                     exit();
                 } else {

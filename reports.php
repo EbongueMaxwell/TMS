@@ -1,4 +1,6 @@
 <?php
+session_start();
+ob_start(); // Start output buffering
 include 'dbconn.php';
 
 // Ensure the admin header loads properly at the top
@@ -99,3 +101,7 @@ $actionsRecords = $conn->query("SELECT * FROM actions ORDER BY timestamp DESC");
 
 </body>
 </html>
+
+<?php
+ob_end_flush(); // Flush the output buffer
+?>

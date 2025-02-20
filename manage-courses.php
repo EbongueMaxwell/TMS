@@ -1,6 +1,8 @@
 <?php
-include 'dbconn.php';
-include 'adminheader.php'; // Include the admin header and sidebar
+session_start(); // Ensure session is started
+
+include 'dbconn.php'; // Your database connection
+include 'adminheader.php'; // Include the admin header logic
 
 // Redirect if not admin
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
@@ -115,6 +117,7 @@ if (isset($_GET['delete'])) {
     <title>Manage Courses</title>
     <link rel="stylesheet" href="fontawesome-free-6.4.0-web/css/all.min.css">
     <style>
+        /* Styles */
         body {
             font-family: Arial, sans-serif;
             background-color: #f0f8ff;
@@ -144,6 +147,12 @@ if (isset($_GET['delete'])) {
             border: 1px solid;
             border-radius: 5px;
         }
+        .content {
+            padding: 20px;
+            max-width: 1200px;
+            margin: auto;
+            align-items: center;
+        }
         .success {
             border-color: green;
             color: green;
@@ -167,7 +176,7 @@ if (isset($_GET['delete'])) {
             color: #333;
         }
         input[type="text"], textarea, input[type="number"], input[type="file"] {
-            width: 100%;
+            width: 80%;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
@@ -196,66 +205,69 @@ if (isset($_GET['delete'])) {
     </style>
 </head>
 <body>
-    <h1>Manage Courses</h1>
+ <div class="content">
+ <h1>Manage Courses</h1>
 
-    <?php if (isset($successMessage)): ?>
-        <div class="message success"><?php echo $successMessage; ?></div>
-    <?php endif; ?>
-    <?php if (isset($errorMessage)): ?>
-        <div class="message error"><?php echo $errorMessage; ?></div>
-    <?php endif; ?>
+<?php if (isset($successMessage)): ?>
+    <div class="message success"><?php echo $successMessage; ?></div>
+<?php endif; ?>
+<?php if (isset($errorMessage)): ?>
+    <div class="message error"><?php echo $errorMessage; ?></div>
+<?php endif; ?>
 
-    <form method="POST" action="manage-courses.php" enctype="multipart/form-data">
-        <input type="hidden" name="course_id" value="<?php echo isset($course) ? $course['id'] : ''; ?>">
-        <label for="title">Course Title:</label>
-        <input type="text" name="title" value="<?php echo isset($course) ? htmlspecialchars($course['title']) : ''; ?>" required>
-        <label for="description">Description:</label>
-        <textarea name="description" required><?php echo isset($course) ? htmlspecialchars($course['description']) : ''; ?></textarea>
-        <label for="credits">Credits:</label>
-        <input type="number" name="credits" value="<?php echo isset($course) ? htmlspecialchars($course['credits']) : ''; ?>" required min="1">
-        <label for="duration">Duration (weeks):</label>
-        <input type="number" name="duration" value="<?php echo isset($course) ? htmlspecialchars($course['duration']) : ''; ?>" required min="1">
-        <label for="image">Course Image:</label>
-        <input type="file" name="image" accept="image/*">
-        <?php if (isset($course) && $course['image_url']): ?>
-            <img src="<?php echo htmlspecialchars($course['image_url']); ?>" alt="Course Image" style="max-width: 100px; margin-top: 10px;">
-        <?php endif; ?>
-        <button type="submit" name="<?php echo isset($course) ? 'update' : 'create'; ?>">
-            <?php echo isset($course) ? 'Update Course' : 'Create Course'; ?>
-        </button>
-    </form>
+<form method="POST" action="manage-courses.php" enctype="multipart/form-data">
+    <input type="hidden" name="course_id" value="<?php echo isset($course) ? $course['id'] : ''; ?>">
+    <label for="title">Course Title:</label>
+    <input type="text" name="title" value="<?php echo isset($course) ? htmlspecialchars($course['title']) : ''; ?>" required>
+    <label for="description">Description:</label>
+    <textarea name="description" required><?php echo isset($course) ? htmlspecialchars($course['description']) : ''; ?></textarea>
+    <label for="credits">Credits:</label>
+    <input type="number" name="credits" value="<?php echo isset($course) ? htmlspecialchars($course['credits']) : ''; ?>" required min="1">
+    <label for="duration">Duration (weeks):</label>
+    <input type="number" name="duration" value="<?php echo isset($course) ? htmlspecialchars($course['duration']) : ''; ?>" required min="1">
+    <label for="image">Course Image:</label>
+    <input type="file" name="image" accept="image/*">
+    <?php if (isset($course) && $course['image_url']): ?>
+        <img src="<?php echo htmlspecialchars($course['image_url']); ?>" alt="Course Image" style="max-width: 100px; margin-top: 10px;">
+    <?php endif; ?><br>
+    <button type="submit" name="<?php echo isset($course) ? 'update' : 'create'; ?>">
+        <?php echo isset($course) ? 'Update Course' : 'Create Course'; ?>
+    </button>
+</form>
 
-    <h2>Course List</h2>
-    <table>
-        <tr>
-            <th>Title</th>
-            <th>Description</th>
-            <th>Credits</th>
-            <th>Duration (weeks)</th>
-            <th>Image</th>
-            <th>Actions</th>
-        </tr>
-        <?php while ($course = $courses->fetch_assoc()): ?>
-        <tr>
-            <td><?php echo htmlspecialchars($course['title']); ?></td>
-            <td><?php echo htmlspecialchars($course['description']); ?></td>
-            <td><?php echo htmlspecialchars($course['credits']); ?></td>
-            <td><?php echo htmlspecialchars($course['duration']); ?></td>
-            <td>
-                <?php if ($course['image_url']): ?>
-                    <img src="<?php echo htmlspecialchars($course['image_url']); ?>" alt="Course Image" style="max-width: 100px;">
-                <?php endif; ?>
-            </td>
-            <td class="actions">
-                <a href="?edit=<?php echo $course['id']; ?>">
-                    <i class="fas fa-edit"></i> Edit
-                </a>
-                <a href="?delete=<?php echo $course['id']; ?>" onclick="return confirm('Are you sure you want to delete this course?');">
-                    <i class="fas fa-trash"></i> Delete
-                </a>
-            </td>
-        </tr>
-        <?php endwhile; ?>
-    </table>
+<h2>Course List</h2>
+<table>
+    <tr>
+        <th>Title</th>
+        <th>Description</th>
+        <th>Credits</th>
+        <th>Duration (weeks)</th>
+        <th>Image</th>
+        <th>Actions</th>
+    </tr>
+    <?php while ($course = $courses->fetch_assoc()): ?>
+    <tr>
+        <td><?php echo htmlspecialchars($course['title']); ?></td>
+        <td><?php echo htmlspecialchars($course['description']); ?></td>
+        <td><?php echo htmlspecialchars($course['credits']); ?></td>
+        <td><?php echo htmlspecialchars($course['duration']); ?></td>
+        <td>
+            <?php if ($course['image_url']): ?>
+                <img src="<?php echo htmlspecialchars($course['image_url']); ?>" alt="Course Image" style="max-width: 100px;">
+            <?php endif; ?>
+        </td>
+        <td class="actions">
+            <a href="?edit=<?php echo $course['id']; ?>">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+            <a href="?delete=<?php echo $course['id']; ?>" onclick="return confirm('Are you sure you want to delete this course?');">
+                <i class="fas fa-trash"></i> Delete
+            </a>
+        </td>
+    </tr>
+    <?php endwhile; ?>
+</table>
+ </div>
+    
 </body>
 </html>
