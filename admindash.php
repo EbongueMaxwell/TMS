@@ -1,5 +1,5 @@
 <?php
-
+session_start();
 include 'dbconn.php'; // Your database connection file
 include 'adminheader.php'; // Include the header and sidebar
 
@@ -33,6 +33,11 @@ while ($course = $resultEnrollments->fetch_assoc()) {
 }
 $stmtEnrollments->close();
 
+// Fetch all users
+$stmtUsers = $conn->prepare("SELECT username, role FROM users");
+$stmtUsers->execute();
+$users = $stmtUsers->get_result();
+
 // Function to send notification
 function sendNotification($conn, $userId, $action) {
     $stmt = $conn->prepare("INSERT INTO notifications (user_id, action) VALUES (?, ?)");
@@ -57,7 +62,7 @@ if (isset($_POST['courseId'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Courses</title>
+    <title>Admin Dashboard</title>
     <link rel="stylesheet" href="fontawesome-free-6.4.0-web/css/all.min.css">
     <style>
         html, body {
@@ -106,6 +111,24 @@ if (isset($_POST['courseId'])) {
             background-color: #f1f1f1;
             padding: 15px;
             border-radius: 5px;
+        }
+
+        /* User Table */
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .user-table th, .user-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .user-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
         }
     </style>
     <script>
@@ -170,7 +193,35 @@ if (isset($_POST['courseId'])) {
         <?php else: ?>
             <p>Welcome to the Dashboard.</p>
         <?php endif; ?>
+
+        <h1>All Users</h1>
+        <table class="user-table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Role</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if ($users->num_rows > 0): ?>
+                    <?php while ($user = $users->fetch_assoc()): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($user['username']); ?></td>
+                        <td><?php echo htmlspecialchars($user['role']); ?></td>
+                    </tr>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="2">No users found.</td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
     </div>
 
+    <?php
+    $stmtUsers->close();
+    $conn->close();
+    ?>
 </body>
 </html>

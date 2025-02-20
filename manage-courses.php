@@ -238,12 +238,14 @@ if (isset($_GET['delete'])) {
 <h2>Course List</h2>
 <table>
     <tr>
+        <center>
         <th>Title</th>
         <th>Description</th>
         <th>Credits</th>
         <th>Duration (weeks)</th>
         <th>Image</th>
         <th>Actions</th>
+        </center
     </tr>
     <?php while ($course = $courses->fetch_assoc()): ?>
     <tr>

@@ -160,8 +160,8 @@ if (isset($_SESSION['user_id'])) {
 
     <div id="sidebar" class="sidebar">
         <a href="trainee_dash.php">Dashboard</a>
-        <a href="traineecourse.php">My6 Courses</a>
-        <a href=".php">View Reports</a>
+        <a href="traineecourse.php">My Courses</a>
+        <a href="traineemanageprofile.php">Manage Profile
         <a href="logout.php">Logout</a>
     </div>
 

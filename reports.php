@@ -17,6 +17,15 @@ $attendanceRecords = $conn->query("SELECT * FROM attendance");
 
 // Retrieve actions performed by trainees
 $actionsRecords = $conn->query("SELECT * FROM actions ORDER BY timestamp DESC");
+
+// Retrieve trainees and their enrolled courses
+$traineeCourses = $conn->query("
+    SELECT u.username AS trainee, c.title AS course 
+    FROM enrollments e 
+    JOIN users u ON e.trainee_id = u.id 
+    JOIN courses c ON e.course_id = c.id 
+    WHERE u.role = 'trainee'
+");
 ?>
 
 <!DOCTYPE html>
@@ -94,6 +103,20 @@ $actionsRecords = $conn->query("SELECT * FROM actions ORDER BY timestamp DESC");
                 <td><?php echo htmlspecialchars($action['user_id']); ?></td>
                 <td><?php echo htmlspecialchars($action['action']); ?></td>
                 <td><?php echo htmlspecialchars($action['timestamp']); ?></td>
+            </tr>
+            <?php endwhile; ?>
+        </table>
+
+        <h2>Trainees and Their Enrolled Courses</h2>
+        <table>
+            <tr>
+                <th>Trainee</th>
+                <th>Course</th>
+            </tr>
+            <?php while ($traineeCourse = $traineeCourses->fetch_assoc()): ?>
+            <tr>
+                <td><?php echo htmlspecialchars($traineeCourse['trainee']); ?></td>
+                <td><?php echo htmlspecialchars($traineeCourse['course']); ?></td>
             </tr>
             <?php endwhile; ?>
         </table>

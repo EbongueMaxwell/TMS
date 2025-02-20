@@ -1,4 +1,4 @@
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <?php
+<?php
 session_start();
 include 'dbconn.php'; // Your database connection file
 
@@ -27,6 +27,11 @@ if (isset($_SESSION['user_id'])) {
 $stmt = $conn->prepare("SELECT * FROM courses");
 $stmt->execute();
 $courses = $stmt->get_result();
+
+// Fetch all users
+$stmtUsers = $conn->prepare("SELECT id, username, role FROM users");
+$stmtUsers->execute();
+$users = $stmtUsers->get_result();
 
 // Handle course selection
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['course_id'])) {
@@ -218,6 +223,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['course_id'])) {
             margin: 5px 0;
             color: #666;
         }
+
+        /* User Table */
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .user-table th, .user-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .user-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
     </style>
     <script>
         function toggleSidebar() {
@@ -280,11 +303,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['course_id'])) {
                 <div>No courses found.</div>
             <?php endif; ?>
         </div>
-    </div>
 
-    <?php
-    $stmt->close();
-    $conn->close();
-    ?>
-</body>
-</html>
+        <h1>All Users</h1>
+        <table class="user-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if ($users->num_rows > 0): ?>
+                    <?php while ($user = $users->fetch_assoc()): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($user['id']); ?></td>
+                        <td><?php echo htmlspecialchars($user['username']); ?></td>
+                        <td><?php echo htmlspecialchars($user['role']); ?></td>
+                    </tr>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="3">No users found.</td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
