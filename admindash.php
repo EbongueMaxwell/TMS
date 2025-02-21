@@ -225,3 +225,7 @@ if (isset($_POST['courseId'])) {
     ?>
 </body>
 </html>
+
+<?php
+include 'footer.php';
+?>

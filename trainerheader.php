@@ -93,7 +93,7 @@ if (isset($_SESSION['user_id'])) {
             opacity: 0; /* Fade effect */
             flex-direction: column; /* Stack links vertically */
             background-color: #B2E0D5;
-            padding: 15px;
+            padding: 20px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             transition: visibility 0s, opacity 0.3s ease; /* Smooth transition */
         }
@@ -121,30 +121,6 @@ if (isset($_SESSION['user_id'])) {
             flex-grow: 1; /* Allow content area to grow */
             padding: 15px;
             background-color: #f1f1f1; /* Optional background for content area */
-            margin-left: 0; /* Adjust margin to accommodate sidebar */
-        }
-
-        .footer {
-            background-color: #343a40;
-            color: white;
-            text-align: center;
-            padding: 20px 0;
-            position: relative; 
-            bottom: 0;
-            width: 100%;
-        }
-
-        .footer p {
-            margin: 5px 0;
-        }
-
-        .footer a {
-            color: #007bff; /* Link color */
-            text-decoration: none;
-        }
-
-        .footer a:hover {
-            text-decoration: underline; /* Underline on hover */
         }
     </style>
     <script>
@@ -181,16 +157,16 @@ if (isset($_SESSION['user_id'])) {
     </div>
 
     <div class="sidebar">
-        <a href="trainee_dash.php">Dashboard</a>
-        <a href="traineecourse.php">My Courses</a>
-        <a href="traineemanageprofile.php">Manage Profile</a>
+    <!----------<h2>Trainer Menu</h2>---------->
+        <a href="trainerdash.php">Dashboard</a>
+        <a href="mycourse.php">My Courses</a>
+        <a href="trainerassign.php">Assignments</a>
         <a href="logout.php">Logout</a>
     </div>
 
-    <!-- Content Area -->
     <div class="content">
         <!-- Page-specific content goes here -->
-    </div>
+       
 
 </body>
 </html>

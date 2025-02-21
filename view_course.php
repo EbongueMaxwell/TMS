@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'dbconn.php'; // Your database connection file
+include 'trainerheader.php'; // Include the trainer header file
 
 // Redirect if not logged in as a trainer
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'trainer') {
@@ -111,69 +112,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['course_id'])) {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        .header {
-            height: 55px;
-            background-color: #007bff;
-            color: white;
-            display: flex;
-            align-items: center;
-            padding: 0 15px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .header h2 {
-            margin: 0 15px;
-        }
-
-        .search-bar {
-            background-color: white;
-            border: 1px solid #ccc;
-            padding: 10px;
-            border-radius: 22px;
-            width: 400px;
-            margin-left: auto;
-            font-size: 16px;
-        }
-
-        .search-icon, .user-icon {
-            cursor: pointer;
-            font-size: 36px;
-            margin-left: 20px;
-            line-height: 55px;
-        }
-
-        .sidebar {
-            height: 100%;
-            width: 200px;
-            position: fixed;
-            left: -300px; /* Initially hidden */
-            background-color: #343a40;
-            color: white;
-            transition: left 0.3s;
-            z-index: 1000;
-            padding: 15px;
-        }
-
-        .sidebar h2 {
-            color: #ffffff;
-            margin: 0 0 20px;
-            font-size: 24px;
-        }
-
-        .sidebar a {
-            display: block;
-            padding: 10px 15px;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            margin: 5px 0;
-            transition: background-color 0.3s;
-        }
-
-        .sidebar a:hover {
-            background-color: #495057;
-        }
-
         .content {
             padding: 20px;
             margin-left: 220px; /* Adjusted for sidebar width */
@@ -210,35 +148,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['course_id'])) {
             text-decoration: underline;
         }
     </style>
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.querySelector('.sidebar');
-            sidebar.style.left = sidebar.style.left === '0px' ? '-300px' : '0px'; // Toggle sidebar
-        }
-    </script>
+    
 </head>
 <body>
 
-    <div class="header">
-        <span class="menu-icon" onclick="toggleSidebar()">
-            <i class="fas fa-bars"></i>
-        </span>
-        <h2>Calea Portal</h2>
-        <input type="text" id="search-bar" class="search-bar" placeholder="Search...">
-        <span class="search-icon"><i class="fas fa-search"></i></span>
-        <span class="user-icon">
-            <i class="fas fa-user"></i>
-            <div class="username-tooltip"><?php echo htmlspecialchars($username); ?></div>
-        </span>
-    </div>
-
-    <div class="sidebar">
-        <h2>Trainer Menu</h2>
-        <a href="trainerdash.php">Dashboard</a>
-        <a href="mycourse.php">My Courses</a>
-        <a href="logout.php">Logout</a>
-    </div>
-
+<h1>Your choosen courses</h1>
     <div class="content">
         <h1 class="course-title"><?php echo htmlspecialchars($course['title']); ?></h1>
         <p class="course-description"><?php echo nl2br(htmlspecialchars($course['description'])); ?></p>
@@ -271,3 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['course_id'])) {
 
 </body>
 </html>
+
+<?php
+include 'footer.php';
+?>

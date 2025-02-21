@@ -49,6 +49,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     echo json_encode(['status' => 'success']);
     exit;
 }
+
+// Handle assignment submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['assignment_file'])) {
+    $courseId = $_POST['course_id'];
+    $userId = $_SESSION['user_id'];
+
+    // Handle file upload
+    $targetDir = "uploads/"; // Ensure this directory has write permissions
+    $targetFile = $targetDir . basename($_FILES["assignment_file"]["name"]);
+    $uploadOk = 1;
+    $fileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
+
+    // Check file size (e.g., limit to 2MB)
+    if ($_FILES["assignment_file"]["size"] > 2000000) {
+        echo "<script>alert('Sorry, your file is too large.');</script>";
+        $uploadOk = 0;
+    }
+
+    // Allow certain file formats
+    if($fileType != "pdf" && $fileType != "doc" && $fileType != "docx") {
+        echo "<script>alert('Sorry, only PDF, DOC, and DOCX files are allowed.');</script>";
+        $uploadOk = 0;
+    }
+
+    // Check if $uploadOk is set to 0 by an error
+    if ($uploadOk == 1) {
+        if (move_uploaded_file($_FILES["assignment_file"]["tmp_name"], $targetFile)) {
+            // Insert assignment details into the database
+            $stmtAssignment = $conn->prepare("INSERT INTO assignments (course_id, trainee_id, file_path, submission_date) VALUES (?, ?, ?, NOW())");
+            $stmtAssignment->bind_param("iis", $courseId, $userId, $targetFile);
+            if ($stmtAssignment->execute()) {
+                echo "<script>alert('Assignment submitted successfully.');</script>";
+            } else {
+                echo "<script>alert('Error submitting the assignment.');</script>";
+            }
+            $stmtAssignment->close();
+        } else {
+            echo "<script>alert('Sorry, there was an error uploading your file.');</script>";
+        }
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -179,6 +220,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                                 <li><?php echo htmlspecialchars($objective); ?></li>
                             <?php endforeach; ?>
                         </ul>
+
+                        <!-- Assignment Submission Form -->
+                        <form action="" method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="course_id" value="<?php echo $courseId; ?>">
+                            <label for="assignment_file">Upload Assignment:</label>
+                            <input type="file" name="assignment_file" required>
+                            <button type="submit" class="btn">Submit</button>
+                        </form>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -189,3 +238,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
 </body>
 </html>
+
+<?php
+include 'footer.php';
+?>

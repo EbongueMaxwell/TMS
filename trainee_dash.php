@@ -122,6 +122,8 @@ if (isset($_GET['course_id']) && isset($_SESSION['user_id'])) {
         $endDate->modify("+$duration weeks");
 
         $now = new DateTime();
+
+        // Allow enrollment only if the current date is past the end date of the previous course
         if ($now < $endDate) {
             echo "<script>alert('You cannot enroll in another course until " . $endDate->format('Y-m-d') . ".');</script>";
         } else {
@@ -149,4 +151,8 @@ if (isset($_GET['course_id']) && isset($_SESSION['user_id'])) {
         $stmtEnroll->close();
     }
 }
+?>
+
+<?php
+include 'footer.php';
 ?>

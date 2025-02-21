@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'dbconn.php'; // Your database connection file
+include 'trainerheader.php'; // Include the trainer header file
 
 // Redirect if not logged in as a trainer
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'trainer') {
@@ -18,7 +19,7 @@ if (isset($_SESSION['user_id'])) {
     $resultUser = $stmtUser->get_result();
     if ($resultUser->num_rows > 0) {
         $user = $resultUser->fetch_assoc();
-        $username = $user['username'];
+        $username = htmlspecialchars($user['username']); // Sanitize output
     }
     $stmtUser->close();
 }
@@ -78,97 +79,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['course_id'])) {
             font-family: Arial, sans-serif;
         }
 
-        .header {
-            height: 55px;
-            background-color: #007bff;
-            color: white;
-            display: flex;
-            align-items: center;
-            padding: 0 15px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .header h2 {
-            margin: 0 15px;
-        }
-
-        .welcome-message {
-            margin-left: auto;
-            font-size: 16px;
-            font-weight: bold;
-        }
-
-        .search-bar {
-            background-color: white;
-            border: 1px solid #ccc;
-            padding: 10px;
-            border-radius: 22px;
-            width: 400px;
-            margin-left: 20px;
-            font-size: 16px;
-        }
-
-        .search-icon, .user-icon {
-            cursor: pointer;
-            font-size: 36px;
-            margin-left: 20px;
-            line-height: 55px;
-            position: relative; /* For tooltip positioning */
-        }
-
-        .tooltip {
-            display: none;
-            position: absolute;
-            top: 40px; /* Position below the icon */
-            left: -90px; /* Align to the left */
-            background-color: #333;
-            color: #fff;
-            padding: 5px;
-            border-radius: 10px;
-            z-index: 1000;
-            font-size: 14px;
-            white-space: nowrap;
-        }
-
-        .user-icon:hover .tooltip {
-            display: block; /* Show tooltip on hover */
-        }
-
-        .sidebar {
-            height: 100%;
-            width: 200px;
-            position: fixed;
-            left: -300px;
-            background-color: #343a40;
-            color: white;
-            transition: left 0.3s;
-            z-index: 1000;
-            padding: 15px;
-        }
-
-        .sidebar h2 {
-            color: #ffffff;
-            margin: 0 0 20px;
-            font-size: 24px;
-        }
-
-        .sidebar a {
-            display: block;
-            padding: 10px 15px;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            margin: 5px 0;
-            transition: background-color 0.3s;
-        }
-
-        .sidebar a:hover {
-            background-color: #495057;
-        }
-
         .content {
             padding: 20px;
-            margin-left: 220px;
+            background-color: whitesmoke;
         }
 
         /* Course Cards */
@@ -223,69 +136,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['course_id'])) {
             margin: 5px 0;
             color: #666;
         }
-
-        /* User Table */
-        .user-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        .user-table th, .user-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-
-        .user-table th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-        }
     </style>
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.querySelector('.sidebar');
-            sidebar.style.left = sidebar.style.left === '0px' ? '-300px' : '0px';
-        }
-
-        function selectCourse(courseId) {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '';
-
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'course_id';
-            input.value = courseId;
-
-            form.appendChild(input);
-            document.body.appendChild(form);
-            form.submit();
-        }
-    </script>
 </head>
 <body>
-
-    <div class="header">
-        <span class="menu-icon" onclick="toggleSidebar()">
-            <i class="fas fa-bars"></i>
-        </span>
-        <h2>Calea Portal</h2>
-        <div class="welcome-message">Welcome, <?php echo htmlspecialchars($username); ?>!</div>
-        <input type="text" id="search-bar" class="search-bar" placeholder="Search...">
-        <span class="search-icon"><i class="fas fa-search"></i></span>
-        <span class="user-icon">
-            <i class="fas fa-user"></i>
-            <div class="tooltip"><?php echo htmlspecialchars($username); ?></div>
-        </span>
-    </div>
-
-    <div class="sidebar">
-        <h2>Trainer Menu</h2>
-        <a href="trainerdash.php">Dashboard</a>
-        <a href="mycourse.php">My Courses</a>
-        <a href="logout.php">Logout</a>
-    </div>
+    <h1>Welcome To The Dashboard</h1>
 
     <div class="content">
         <h1>Select Courses to Teach</h1>
@@ -303,28 +157,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['course_id'])) {
                 <div>No courses found.</div>
             <?php endif; ?>
         </div>
+    </div>
 
-        <h1>All Users</h1>
-        <table class="user-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Username</th>
-                    <th>Role</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if ($users->num_rows > 0): ?>
-                    <?php while ($user = $users->fetch_assoc()): ?>
-                    <tr>
-                        <td><?php echo htmlspecialchars($user['id']); ?></td>
-                        <td><?php echo htmlspecialchars($user['username']); ?></td>
-                        <td><?php echo htmlspecialchars($user['role']); ?></td>
-                    </tr>
-                    <?php endwhile; ?>
-                <?php else: ?>
-                    <tr>
-                        <td colspan="3">No users found.</td>
-                    </tr>
-                <?php endif; ?>
-            </tbody>
+    <script>
+        function selectCourse(courseId) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '';
+
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'course_id';
+            input.value = courseId;
+
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    </script>
+
+</body>
+</html>
+
+<?php
+include 'footer.php';
+?>

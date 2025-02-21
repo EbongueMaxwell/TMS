@@ -53,7 +53,7 @@ $stmtCourses->close();
         .container {
             max-width: 600px;
             margin: 50px auto;
-            padding: 20px;
+            padding: 100px;
             background: #fff;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -63,7 +63,7 @@ $stmtCourses->close();
             color: #333;
         }
         .profile-info {
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
         .profile-info label {
             font-weight: bold;
@@ -123,4 +123,8 @@ $stmtCourses->close();
 
 <?php
 $conn->close();
+?>
+
+<?php
+include 'footer.php';
 ?>

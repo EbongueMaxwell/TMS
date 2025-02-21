@@ -38,14 +38,15 @@ $traineeCourses = $conn->query("
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f0f8ff;
+            background-color: whitesmoke;
             margin: 0;
             padding: 0;
         }
         .content {
-            padding: 20px;
+            padding: 10px;
             max-width: 1200px;
             margin: auto;
+            background-color: #f0f8ff;
         }
         h1 {
             color: #007bff;
@@ -71,9 +72,9 @@ $traineeCourses = $conn->query("
     </style>
 </head>
 <body>
-
+<h1>Welcome To Reportings</h1>
     <div class="content">
-        <h1>Reportings</h1>
+      
 
         <h2>Attendance Records</h2>
         <table>
@@ -127,4 +128,8 @@ $traineeCourses = $conn->query("
 
 <?php
 ob_end_flush(); // Flush the output buffer
+?>
+
+<?php
+include 'footer.php';
 ?>

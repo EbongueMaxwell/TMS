@@ -122,3 +122,7 @@ $attendanceRecords = $conn->query("SELECT a.user_id, a.course_id, a.date, u.user
     </table>
 </body>
 </html>
+
+<?php
+include 'footer.php';
+?>

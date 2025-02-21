@@ -152,6 +152,7 @@ if (isset($_GET['delete'])) {
             max-width: 1200px;
             margin: auto;
             align-items: center;
+            background-color: whitesmoke;
         }
         .success {
             border-color: green;
@@ -273,3 +274,6 @@ if (isset($_GET['delete'])) {
     
 </body>
 </html>
+<?php
+include 'footer.php';
+?>

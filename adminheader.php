@@ -5,9 +5,8 @@ $user_id = null; // Initialize user_id
 
 if (isset($_SESSION['user_id'])) {
     $user_id = $_SESSION['user_id']; // Get user ID from session
-    $userId = $_SESSION['user_id']; // Redundant assignment, can remove this line
     $stmt = $conn->prepare("SELECT username FROM users WHERE id = ?");
-    $stmt->bind_param("i", $userId);
+    $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
     if ($result->num_rows > 0) {
@@ -16,7 +15,6 @@ if (isset($_SESSION['user_id'])) {
     }
     $stmt->close();
 }
-// Now, adminheader.php only contains PHP logic and sets $username and $user_id
 ?>
 
 <!DOCTYPE html>
@@ -31,6 +29,8 @@ if (isset($_SESSION['user_id'])) {
             height: 100%;
             margin: 0;
             font-family: Helvetica;
+            display: flex;
+            flex-direction: column;
         }
 
         .header {
@@ -89,23 +89,26 @@ if (isset($_SESSION['user_id'])) {
         }
 
         .sidebar {
-            height: 100%;
-            width: 165px;
-            position: fixed;
-            left: -300px;
-            background-color: #f9f9f9;
-            transition: left 0.3s;
-            padding: 15px;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            visibility: hidden; /* Initially hidden */
+            opacity: 0; /* Fade effect */
+            flex-direction: column; /* Stack links vertically */
+            background-color: #B2E0D5;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: visibility 0s, opacity 0.3s ease; /* Smooth transition */
+        }
+
+        .sidebar.visible {
+            visibility: visible; /* Make visible */
+            opacity: 1; /* Fully opaque */
         }
 
         .sidebar a {
-            display: block;
+            margin: 5px 0; /* Space between links */
             padding: 10px 15px;
             color: #333;
             text-decoration: none;
             border-radius: 4px;
-            margin: 5px 0;
             transition: background-color 0.3s;
         }
 
@@ -114,8 +117,10 @@ if (isset($_SESSION['user_id'])) {
             color: white;
         }
 
-        .show-sidebar .content {
-            margin-left: 180px;
+        .content {
+            flex-grow: 1; /* Allow content area to grow */
+            padding: 15px;
+            background-color: #f1f1f1; /* Optional background for content area */
         }
     </style>
     <script>
@@ -130,15 +135,8 @@ if (isset($_SESSION['user_id'])) {
         }
 
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const body = document.body;
-            if (sidebar.style.left === '0px') {
-                sidebar.style.left = '-300px';
-                body.classList.remove('show-sidebar');
-            } else {
-                sidebar.style.left = '0px';
-                body.classList.add('show-sidebar');
-            }
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('visible');
         }
     </script>
 </head>
@@ -158,11 +156,16 @@ if (isset($_SESSION['user_id'])) {
         </span>
     </div>
 
-    <div id="sidebar" class="sidebar">
+    <div class="sidebar">
         <a href="admindash.php">Dashboard</a>
         <a href="manage-courses.php">Create Courses</a>
         <a href="reports.php">View Reports</a>
         <a href="logout.php">Logout</a>
+    </div>
+
+    <div class="content">
+        <!-- Page-specific content goes here -->
+       
     </div>
 
 </body>
