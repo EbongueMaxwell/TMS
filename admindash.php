@@ -38,6 +38,22 @@ $stmtUsers = $conn->prepare("SELECT username, role FROM users");
 $stmtUsers->execute();
 $users = $stmtUsers->get_result();
 
+// Fetch all trainees and their course durations for the pie chart
+$traineeDurations = [];
+$stmtTrainees = $conn->prepare("
+    SELECT u.username, SUM(c.duration) AS total_duration 
+    FROM enrollments e 
+    JOIN users u ON e.trainee_id = u.id 
+    JOIN courses c ON e.course_id = c.id 
+    GROUP BY u.username
+");
+$stmtTrainees->execute();
+$resultTrainees = $stmtTrainees->get_result();
+while ($row = $resultTrainees->fetch_assoc()) {
+    $traineeDurations[$row['username']] = $row['total_duration'];
+}
+$stmtTrainees->close();
+
 // Function to send notification
 function sendNotification($conn, $userId, $action) {
     $stmt = $conn->prepare("INSERT INTO notifications (user_id, action) VALUES (?, ?)");
@@ -51,7 +67,6 @@ if (isset($_POST['courseId'])) {
     $courseId = $_POST['courseId'];
     $userId = $_SESSION['user_id'];
     sendNotification($conn, $userId, "Toggled details for course ID: $courseId");
-    // Optionally you can return a response
     echo json_encode(['status' => 'success']);
     exit;
 }
@@ -64,6 +79,7 @@ if (isset($_POST['courseId'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="fontawesome-free-6.4.0-web/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         html, body {
             height: 100%;
@@ -95,16 +111,6 @@ if (isset($_POST['courseId'])) {
             width: 300px; /* Fixed width for cards */
         }
 
-        .course-card h3 {
-            margin: 10px 0 5px; /* Spacing */
-            font-size: 18px;
-        }
-
-        .course-card p {
-            margin: 5px 0;
-            color: #555;
-        }
-
         .course-details {
             display: none; /* Initially hide details */
             margin: 10px 0;
@@ -130,6 +136,14 @@ if (isset($_POST['courseId'])) {
             background-color: #f2f2f2;
             font-weight: bold;
         }
+
+        /* Chart Container */
+        .chart-container {
+            margin-top: 30px;
+            width: 100%;
+            max-width: 600px; /* Limit chart width */
+            margin: auto; /* Center the chart */
+        }
     </style>
     <script>
         function executeSearch() {
@@ -140,6 +154,7 @@ if (isset($_POST['courseId'])) {
             } else {
                 alert("Please enter a search term.");
             }
+
         }
 
         function toggleDetails(courseId) {
@@ -158,6 +173,58 @@ if (isset($_POST['courseId'])) {
                 details.style.display = 'none'; // Hide details
             }
         }
+
+        // Function to render the pie chart
+        function renderPieChart(data) {
+            const ctx = document.getElementById('traineeChart').getContext('2d');
+            const chartData = {
+                labels: Object.keys(data),
+                datasets: [{
+                    label: 'Total Course Duration by Trainee',
+                    data: Object.values(data),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(153, 102, 255, 0.2)',
+                        'rgba(255, 159, 64, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            };
+
+            const myChart = new Chart(ctx, {
+                type: 'pie',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Total Course Duration by Trainee'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize the chart on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const traineeData = <?php echo json_encode($traineeDurations); ?>;
+            renderPieChart(traineeData);
+        });
     </script>
 </head>
 <body>
@@ -217,6 +284,11 @@ if (isset($_POST['courseId'])) {
                 <?php endif; ?>
             </tbody>
         </table>
+
+        <!-- Pie Chart Container -->
+        <div class="chart-container">
+            <canvas id="traineeChart"></canvas>
+        </div>
     </div>
 
     <?php
